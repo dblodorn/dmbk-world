@@ -3,7 +3,14 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(pnpm install:*)",
-      "Bash(npx create-next-app:*)"
+      "Bash(npx create-next-app:*)",
+      "Bash(pnpm add:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pkill:*)",
+      "WebFetch(domain:docs.fal.ai)",
+      "WebFetch(domain:www.npmjs.com)"
     ],
     "deny": []
   }

@@ -5,6 +5,7 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "dev:lora-trainer": "turbo dev --filter=lora-trainer",
     "lint": "turbo lint",
     "clean": "turbo clean"
   },
