@@ -1,10 +1,10 @@
-import { router } from './trpc';
-import { helloRouter } from './features/hello';
-import { falRouter } from './features/fal';
+import { router } from "./trpc";
+import { falRouter } from "./features/fal";
+import { arenaRouter } from "./features/arena";
 
 export const appRouter = router({
-  hello: helloRouter,
   fal: falRouter,
+  arena: arenaRouter,
 });
 
 export type AppRouter = typeof appRouter;
