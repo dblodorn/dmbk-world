@@ -86,6 +86,48 @@ export const falRouter = router({
       };
     }),
 
+  downloadImageZip: publicProcedure
+    .input(
+      z.object({
+        imageUrls: z.array(z.string().url()).min(1).max(20),
+        triggerWord: z.string().min(1).max(50),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        console.log(
+          `Creating downloadable zip file from ${input.imageUrls.length} images...`
+        );
+
+        // Create zip file from images
+        const zipBuffer = await createImageZip(input.imageUrls);
+
+        console.log(`Zip file created (${zipBuffer.length} bytes)`);
+
+        // Convert buffer to base64 for transport
+        const base64Zip = zipBuffer.toString("base64");
+
+        // Generate filename with trigger word and timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const filename = `lora-training-${input.triggerWord}-${timestamp}.zip`;
+
+        return {
+          success: true,
+          filename,
+          data: base64Zip,
+          size: zipBuffer.length,
+          imageCount: input.imageUrls.length,
+        };
+      } catch (error) {
+        console.error("Zip download error:", error);
+        throw new Error(
+          `Failed to create zip archive: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+      }
+    }),
+
   trainLora: publicProcedure
     .input(
       z.object({

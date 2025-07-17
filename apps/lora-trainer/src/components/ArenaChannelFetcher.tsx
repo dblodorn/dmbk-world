@@ -9,6 +9,14 @@ interface FormData {
   trainingSteps: number;
 }
 
+interface DownloadZipResponse {
+  success: boolean;
+  filename: string;
+  data: string;
+  size: number;
+  imageCount: number;
+}
+
 export default function ArenaChannelFetcher() {
   const [submittedUrl, setSubmittedUrl] = useState("");
 
@@ -34,6 +42,35 @@ export default function ArenaChannelFetcher() {
     },
     onError: (error) => {
       console.error("LoRA training failed:", error);
+    },
+  });
+
+  // Temporary type assertion until tRPC types are regenerated
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const falApi = trpc.fal as any;
+  const downloadZipMutation = falApi.downloadImageZip.useMutation({
+    onSuccess: (data: DownloadZipResponse) => {
+      // Convert base64 to blob and trigger download
+      const byteCharacters = atob(data.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/zip" });
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    },
+    onError: (error: Error) => {
+      console.error("Download failed:", error);
     },
   });
 
@@ -95,6 +132,27 @@ export default function ArenaChannelFetcher() {
       });
     } catch (error) {
       console.error("LoRA training error:", error);
+    }
+  };
+
+  const handleDownloadZip = async (formData: FormData) => {
+    if (!formData.selectedImages || formData.selectedImages.length === 0) {
+      alert("No images selected to download");
+      return;
+    }
+
+    if (!formData.triggerWord.trim()) {
+      alert("Please enter a trigger word for the filename");
+      return;
+    }
+
+    try {
+      await downloadZipMutation.mutateAsync({
+        imageUrls: formData.selectedImages,
+        triggerWord: formData.triggerWord,
+      });
+    } catch (error) {
+      console.error("Download error:", error);
     }
   };
 
@@ -291,8 +349,41 @@ export default function ArenaChannelFetcher() {
                           ? "Training LoRA..."
                           : "Train LoRA"}
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSubmit(handleDownloadZip)}
+                        disabled={
+                          downloadZipMutation.isPending ||
+                          selectedImages.length === 0
+                        }
+                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+                      >
+                        {downloadZipMutation.isPending
+                          ? "Creating Zip..."
+                          : "Download Images Zip"}
+                      </button>
                     </div>
                   </div>
+
+                  {downloadZipMutation.isError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-sm text-red-700">
+                        Download Error: {downloadZipMutation.error?.message}
+                      </p>
+                    </div>
+                  )}
+
+                  {downloadZipMutation.isSuccess && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-sm text-blue-700 font-medium">
+                        Zip archive downloaded successfully!
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Check your Downloads folder for the zip file.
+                      </p>
+                    </div>
+                  )}
 
                   {trainLoraMutation.isError && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-md">
