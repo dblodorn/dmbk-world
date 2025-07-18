@@ -14,12 +14,32 @@ async function downloadImage(
   url: string
 ): Promise<{ filename: string; data: Buffer }> {
   try {
-    const response = await fetch(url);
+    console.log(`Attempting to download image from: ${url}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    console.log(`Response status: ${response.status} ${response.statusText}`);
+    console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
+    
     if (!response.ok) {
-      throw new Error(`Failed to download image: ${response.statusText}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const contentType = response.headers.get('content-type');
+    console.log(`Content-Type: ${contentType}`);
+    
+    if (!contentType || !contentType.startsWith('image/')) {
+      console.warn(`Warning: Content-Type is not an image: ${contentType}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    console.log(`Downloaded ${buffer.length} bytes`);
 
     // Extract filename from URL or create a default one
     const urlPath = new URL(url).pathname;
@@ -29,13 +49,13 @@ async function downloadImage(
     const hasExtension = /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
     const finalFilename = hasExtension ? filename : `${filename}.jpg`;
 
+    console.log(`Final filename: ${finalFilename}`);
+
     return { filename: finalFilename, data: buffer };
   } catch (error) {
-    throw new Error(
-      `Failed to download image from ${url}: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error(`Failed to download image from ${url}:`, errorMessage);
+    throw new Error(`Failed to download image from ${url}: ${errorMessage}`);
   }
 }
 
@@ -43,16 +63,20 @@ async function downloadImage(
 async function createImageZip(imageUrls: string[]): Promise<Buffer> {
   const zip = new JSZip();
 
+  console.log(`Starting to create zip from ${imageUrls.length} image URLs`);
+
   // Download all images in parallel
   const downloadPromises = imageUrls.map((url, index) =>
     downloadImage(url).catch((error) => {
-      console.error(`Failed to download image ${index + 1}:`, error);
+      console.error(`Failed to download image ${index + 1} from URL ${url}:`, error);
       return null; // Return null for failed downloads
     })
   );
 
   const downloadResults = await Promise.all(downloadPromises);
   const validImages = downloadResults.filter((result) => result !== null);
+
+  console.log(`Successfully downloaded ${validImages.length} out of ${imageUrls.length} images`);
 
   if (validImages.length === 0) {
     throw new Error("Failed to download any images");
@@ -62,11 +86,26 @@ async function createImageZip(imageUrls: string[]): Promise<Buffer> {
   validImages.forEach((image, index) => {
     // Ensure unique filenames in case of duplicates
     const uniqueFilename = `${index + 1}_${image!.filename}`;
+    console.log(`Adding image ${uniqueFilename} to zip (${image!.data.length} bytes)`);
     zip.file(uniqueFilename, image!.data);
   });
 
   // Generate zip buffer
-  const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+  console.log("Generating zip buffer...");
+  const zipBuffer = await zip.generateAsync({ 
+    type: "nodebuffer",
+    compression: "DEFLATE",
+    compressionOptions: { level: 6 }
+  });
+  
+  console.log(`Zip buffer generated: ${zipBuffer.length} bytes`);
+  
+  // Log zip contents for debugging
+  const zipContents = await zip.generateAsync({ type: "nodebuffer" });
+  const testZip = new JSZip();
+  const loadedZip = await testZip.loadAsync(zipContents);
+  console.log("Zip contents verification:", Object.keys(loadedZip.files));
+  
   return zipBuffer;
 }
 
