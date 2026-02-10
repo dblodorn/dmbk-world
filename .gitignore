@@ -115,3 +115,4 @@ Thumbs.db
 *.rar
 *.tar
 *.zip
+.env*.local
