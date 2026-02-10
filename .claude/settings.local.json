@@ -19,7 +19,9 @@
       "Bash(node -e:*)",
       "Bash(npx reshaped theming:*)",
       "Bash(pnpm --filter lora-trainer build:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }
