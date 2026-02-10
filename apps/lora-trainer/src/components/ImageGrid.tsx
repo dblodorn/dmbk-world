@@ -16,7 +16,7 @@ export default function ImageGrid({
   getImageUrl,
 }: ImageGridProps) {
   return (
-    <View direction="row" wrap gap={4}>
+    <View direction="row" wrap gap={2}>
       {images.map((image) => {
         const imageUrl = getImageUrl(image);
         if (!imageUrl) return null;

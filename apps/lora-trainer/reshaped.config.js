@@ -9,9 +9,9 @@ const config = {
         title: { family: "Arial, Helvetica, sans-serif" },
       },
       radius: {
-        small: { px: 4 },
-        medium: { px: 8 },
-        large: { px: 12 },
+        small: { px: 0 },
+        medium: { px: 0 },
+        large: { px: 0 },
       },
     },
   },

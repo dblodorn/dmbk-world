@@ -10,7 +10,7 @@ import type { FormData, ArenaImage } from "./types";
 export default function ArenaChannelFetcher() {
   const [submittedUrl, setSubmittedUrl] = useState("");
 
-  const { handleSubmit, control, setValue } = useForm<FormData>({
+  const { handleSubmit, control, setValue, getValues } = useForm<FormData>({
     defaultValues: {
       url: "",
       selectedImages: [],
@@ -75,13 +75,14 @@ export default function ArenaChannelFetcher() {
 
   const getImageUrl = (image: ArenaImage) => {
     return (
-      image.image?.display.url ||
+      image.image?.original.url ||
       image.image?.large.url ||
-      image.image?.original.url
+      image.image?.display.url
     );
   };
 
-  const handleTrainLora = async (formData: FormData) => {
+  const handleTrainLora = async () => {
+    const formData = getValues();
     if (!formData.selectedImages || formData.selectedImages.length === 0) {
       alert("Please select at least one image to train the LoRA");
       return;
@@ -101,7 +102,8 @@ export default function ArenaChannelFetcher() {
     }
   };
 
-  const handleDownloadZip = async (formData: FormData) => {
+  const handleDownloadZip = async () => {
+    const formData = getValues();
     if (!formData.selectedImages || formData.selectedImages.length === 0) {
       alert("No images selected to download");
       return;
@@ -121,7 +123,7 @@ export default function ArenaChannelFetcher() {
   };
 
   return (
-    <View maxWidth="1280px" width="100%" paddingInline={6} paddingBlock={6}>
+    <View width="100%" padding={2}>
       <View gap={8}>
         <ChannelUrlForm
           control={control}
@@ -138,7 +140,7 @@ export default function ArenaChannelFetcher() {
             <View.Item columns={{ s: 12, l: 8 }}>
               <View gap={6}>
                 <View gap={2}>
-                  <Text variant="title-3" weight="bold">
+                  <Text variant="title-5" weight="bold">
                     {data.channel.title}
                   </Text>
                   <Text variant="body-2" color="neutral-faded">
@@ -172,8 +174,8 @@ export default function ArenaChannelFetcher() {
                 selectedImages={selectedImages}
                 control={control}
                 onRemoveImage={(url) => handleImageSelection(url, false)}
-                onTrain={handleSubmit(handleTrainLora)}
-                onDownload={handleSubmit(handleDownloadZip)}
+                onTrain={handleTrainLora}
+                onDownload={handleDownloadZip}
                 trainMutation={trainLoraMutation}
                 downloadMutation={downloadZipMutation}
               />

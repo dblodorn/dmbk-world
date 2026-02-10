@@ -82,9 +82,9 @@
 --rs-unit-x8: 32px;
 --rs-unit-x9: 36px;
 --rs-unit-x10: 40px;
---rs-radius-small: 4px;
---rs-radius-medium: 8px;
---rs-radius-large: 12px;
+--rs-radius-small: 0px;
+--rs-radius-medium: 0px;
+--rs-radius-large: 0px;
 --rs-color-brand: oklch(0.5461 0.2152 262.8809);
 --rs-color-white: oklch(1 0 0);
 --rs-color-black: oklch(0 0 0);

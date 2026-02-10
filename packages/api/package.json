@@ -15,6 +15,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@fal-ai/client": "^1.2.0",
     "@trpc/server": "^11.4.3",
     "are.na": "^0.1.5",
     "dotenv": "^16.4.5",

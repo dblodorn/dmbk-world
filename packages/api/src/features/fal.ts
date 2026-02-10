@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../trpc";
 import { requireFalApiKey } from "../env";
-import * as fal from "@fal-ai/serverless-client";
+import { fal } from "@fal-ai/client";
 import JSZip from "jszip";
 
 // Configure fal client lazily — credentials are validated per-request
@@ -24,10 +24,8 @@ async function downloadImage(
       },
     });
 
-    console.log(`Response status: ${response.status} ${response.statusText}`);
     console.log(
-      `Response headers:`,
-      Object.fromEntries(response.headers.entries()),
+      `Response status: ${response.status} ${response.statusText} (final URL: ${response.url})`,
     );
 
     if (!response.ok) {
@@ -38,13 +36,22 @@ async function downloadImage(
     console.log(`Content-Type: ${contentType}`);
 
     if (!contentType || !contentType.startsWith("image/")) {
-      console.warn(`Warning: Content-Type is not an image: ${contentType}`);
+      throw new Error(
+        `Response is not an image (Content-Type: ${contentType ?? "missing"}). The URL may be invalid or require authentication.`,
+      );
     }
 
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     console.log(`Downloaded ${buffer.length} bytes`);
+
+    // Reject suspiciously small responses — likely an error page, not a real image
+    if (buffer.length < 1024) {
+      throw new Error(
+        `Downloaded file is too small (${buffer.length} bytes) — likely not a valid image`,
+      );
+    }
 
     // Extract filename from URL or create a default one
     const urlPath = new URL(url).pathname;
@@ -113,11 +120,15 @@ async function createImageZip(imageUrls: string[]): Promise<Buffer> {
 
   console.log(`Zip buffer generated: ${zipBuffer.length} bytes`);
 
-  // Log zip contents for debugging
-  const zipContents = await zip.generateAsync({ type: "nodebuffer" });
+  // Verify the zip is valid by re-loading it
   const testZip = new JSZip();
-  const loadedZip = await testZip.loadAsync(zipContents);
-  console.log("Zip contents verification:", Object.keys(loadedZip.files));
+  const loadedZip = await testZip.loadAsync(zipBuffer);
+  const fileNames = Object.keys(loadedZip.files);
+  console.log(`Zip contents verification (${fileNames.length} files):`, fileNames);
+
+  if (fileNames.length === 0) {
+    throw new Error("Zip archive was generated but contains no files");
+  }
 
   return zipBuffer;
 }
@@ -188,15 +199,9 @@ export const falRouter = router({
           `Zip file created (${zipBuffer.length} bytes), uploading to FAL storage...`,
         );
 
-        // Upload zip file to FAL storage
-        const zipFile = new File(
-          [new Uint8Array(zipBuffer)],
-          "training_images.zip",
-          {
-            type: "application/zip",
-          },
-        );
-        const zipUrl = await fal.storage.upload(zipFile);
+        // Upload zip file to FAL storage using Blob (better Node.js compat)
+        const zipBlob = new Blob([new Uint8Array(zipBuffer)], { type: "application/zip" });
+        const zipUrl = await fal.storage.upload(zipBlob);
 
         console.log(`Zip uploaded to: ${zipUrl}, starting LoRA training...`);
 

@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@fal-ai/serverless-client':
-        specifier: ^0.15.0
-        version: 0.15.0
     devDependencies:
       turbo:
         specifier: ^2.0.0
@@ -76,6 +72,9 @@ importers:
 
   packages/api:
     dependencies:
+      '@fal-ai/client':
+        specifier: ^1.2.0
+        version: 1.9.0
       '@trpc/server':
         specifier: ^11.4.3
         version: 11.4.3(typescript@5.8.3)
@@ -396,8 +395,8 @@ packages:
       levn: 0.4.1
     dev: true
 
-  /@fal-ai/serverless-client@0.15.0:
-    resolution: {integrity: sha512-4Vuocu0342OijAN6xO/lwohDV7h90LbkTnOAEwH+pYvMFVC6RYmHS4GILc/wnOWBTw+iFlZFEKlljEVolkjVfg==}
+  /@fal-ai/client@1.9.0:
+    resolution: {integrity: sha512-okIXfgrjiRlens0CGbg50LFR0cZYfIG+DehC5ObTQUwSziOzqlytkFDi98dqbgvtfu4Ecbtjz90rj5/EVSEZog==}
     engines: {node: '>=18.0.0'}
     dependencies:
       '@msgpack/msgpack': 3.1.2

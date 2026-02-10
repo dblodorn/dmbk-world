@@ -15,8 +15,5 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@8.15.4",
-  "dependencies": {
-    "@fal-ai/serverless-client": "^0.15.0"
-  }
+  "packageManager": "pnpm@8.15.4"
 }

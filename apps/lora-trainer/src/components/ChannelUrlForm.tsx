@@ -14,13 +14,17 @@ export default function ChannelUrlForm({
   isLoading,
 }: ChannelUrlFormProps) {
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit();
+    <View
+      as="form"
+      width="100%"
+      attributes={{
+        onSubmit: (e) => {
+          e.preventDefault();
+          onSubmit();
+        },
       }}
     >
-      <View direction="row" gap={4}>
+      <View direction="row">
         <View.Item grow>
           <Controller
             name="url"
@@ -41,6 +45,6 @@ export default function ChannelUrlForm({
           Fetch Images
         </Button>
       </View>
-    </form>
+    </View>
   );
 }
