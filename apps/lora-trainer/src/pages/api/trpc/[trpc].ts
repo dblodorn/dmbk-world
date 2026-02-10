@@ -17,9 +17,9 @@ export default async function trpcHandler(req: NextApiRequest, res: NextApiRespo
   // #endregion
   try {
     return await handler(req, res);
-  } catch (err: any) {
+  } catch (err: unknown) {
     // #region agent log
-    fetch('http://127.0.0.1:7245/ingest/85cb3862-0b23-4cd2-9eab-199a5e649536',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'[trpc].ts:handler-error',message:'Handler threw error',data:{error: err?.message, stack: err?.stack?.slice(0, 500)},timestamp:Date.now(),hypothesisId:'all'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7245/ingest/85cb3862-0b23-4cd2-9eab-199a5e649536',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'[trpc].ts:handler-error',message:'Handler threw error',data:{error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack?.slice(0, 500) : undefined},timestamp:Date.now(),hypothesisId:'all'})}).catch(()=>{});
     // #endregion
     throw err;
   }
