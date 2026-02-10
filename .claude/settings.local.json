@@ -10,7 +10,16 @@
       "Bash(pnpm dev:*)",
       "Bash(pkill:*)",
       "WebFetch(domain:docs.fal.ai)",
-      "WebFetch(domain:www.npmjs.com)"
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:www.reshaped.so)",
+      "WebFetch(domain:reshaped.so)",
+      "Bash(du:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(node -e:*)",
+      "Bash(npx reshaped theming:*)",
+      "Bash(pnpm --filter lora-trainer build:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
