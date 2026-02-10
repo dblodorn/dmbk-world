@@ -1,3 +1,4 @@
+/// <reference path="../types/arena.d.ts" />
 import { z } from "zod";
 import { publicProcedure, router } from "../trpc";
 import Arena from "are.na";
@@ -25,8 +26,8 @@ export const arenaRouter = router({
 
         // Filter for image blocks and extract image URLs
         const images = contents
-          .filter((block: any) => block.class === "Image")
-          .map((block: any) => ({
+          .filter((block) => block.class === "Image")
+          .map((block) => ({
             id: block.id,
             title: block.title,
             image: block.image,

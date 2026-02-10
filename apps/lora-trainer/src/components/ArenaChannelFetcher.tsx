@@ -9,14 +9,6 @@ interface FormData {
   trainingSteps: number;
 }
 
-interface DownloadZipResponse {
-  success: boolean;
-  filename: string;
-  data: string;
-  size: number;
-  imageCount: number;
-}
-
 export default function ArenaChannelFetcher() {
   const [submittedUrl, setSubmittedUrl] = useState("");
 
@@ -45,11 +37,8 @@ export default function ArenaChannelFetcher() {
     },
   });
 
-  // Temporary type assertion until tRPC types are regenerated
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const falApi = trpc.fal as any;
-  const downloadZipMutation = falApi.downloadImageZip.useMutation({
-    onSuccess: (data: DownloadZipResponse) => {
+  const downloadZipMutation = trpc.fal.downloadImageZip.useMutation({
+    onSuccess: (data) => {
       // Convert base64 to blob and trigger download
       const byteCharacters = atob(data.data);
       const byteNumbers = new Array(byteCharacters.length);
@@ -69,7 +58,7 @@ export default function ArenaChannelFetcher() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       console.error("Download failed:", error);
     },
   });
@@ -97,15 +86,15 @@ export default function ArenaChannelFetcher() {
 
   const getImageUrl = (image: {
     image?: {
-      display?: { url: string };
-      large?: { url: string };
-      original?: { url: string };
+      display: { url: string };
+      large: { url: string };
+      original: { url: string };
     };
   }) => {
     return (
-      image.image?.display?.url ||
-      image.image?.large?.url ||
-      image.image?.original?.url
+      image.image?.display.url ||
+      image.image?.large.url ||
+      image.image?.original.url
     );
   };
 
