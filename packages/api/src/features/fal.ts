@@ -123,27 +123,6 @@ async function createImageZip(imageUrls: string[]): Promise<Buffer> {
 }
 
 export const falRouter = router({
-  test: publicProcedure
-    .input(z.object({ message: z.string() }))
-    .query(({ input }) => {
-      // Verify that the FAL AI API key is available
-      let hasApiKey = false;
-      let keyPreview = "Not configured";
-      try {
-        const key = requireFalApiKey();
-        hasApiKey = true;
-        keyPreview = `${key.slice(0, 8)}...`;
-      } catch {
-        // key not set — that's fine for the test endpoint
-      }
-
-      return {
-        message: `FAL API: ${input.message}`,
-        apiKeyConfigured: hasApiKey,
-        apiKeyPreview: keyPreview,
-      };
-    }),
-
   downloadImageZip: publicProcedure
     .input(
       z.object({
