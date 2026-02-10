@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { View, Text, Link, Alert } from "reshaped";
 import { trpc } from "@/utils/trpc";
+import { downloadBase64File } from "@/utils/downloadBase64File";
 import ChannelUrlForm from "./ChannelUrlForm";
 import ImageGrid from "./ImageGrid";
 import Sidebar from "./Sidebar";
@@ -33,22 +34,7 @@ export default function ArenaChannelFetcher() {
 
   const downloadZipMutation = trpc.fal.downloadImageZip.useMutation({
     onSuccess: (data) => {
-      const byteCharacters = atob(data.data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "application/zip" });
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = data.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      downloadBase64File(data.data, data.filename, "application/zip");
     },
     onError: (error) => console.error("Download failed:", error),
   });
