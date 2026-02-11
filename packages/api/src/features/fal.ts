@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure, router } from "../trpc";
+import { protectedProcedure, router } from "../trpc";
 import { requireFalApiKey } from "../env";
 import { fal } from "@fal-ai/client";
 import JSZip from "jszip";
@@ -134,7 +134,7 @@ async function createImageZip(imageUrls: string[]): Promise<Buffer> {
 }
 
 export const falRouter = router({
-  downloadImageZip: publicProcedure
+  downloadImageZip: protectedProcedure
     .input(
       z.object({
         imageUrls: z.array(z.string().url()).min(1).max(20),
@@ -176,7 +176,7 @@ export const falRouter = router({
       }
     }),
 
-  trainLora: publicProcedure
+  trainLora: protectedProcedure
     .input(
       z.object({
         imageUrls: z.array(z.string().url()).min(1).max(20),
@@ -233,7 +233,7 @@ export const falRouter = router({
       }
     }),
 
-  getTrainingStatus: publicProcedure
+  getTrainingStatus: protectedProcedure
     .input(z.object({ requestId: z.string() }))
     .query(async ({ input }) => {
       try {
@@ -268,7 +268,7 @@ export const falRouter = router({
       }
     }),
 
-  cancelTraining: publicProcedure
+  cancelTraining: protectedProcedure
     .input(z.object({ requestId: z.string() }))
     .mutation(async ({ input }) => {
       try {
@@ -291,7 +291,7 @@ export const falRouter = router({
       }
     }),
 
-  getTrainingResult: publicProcedure
+  getTrainingResult: protectedProcedure
     .input(z.object({ requestId: z.string() }))
     .query(async ({ input }) => {
       try {
