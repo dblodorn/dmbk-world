@@ -1,12 +1,15 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { View, Alert } from "reshaped";
 import { trpc } from "@/utils/trpc";
 import { downloadBase64File } from "@/utils/downloadBase64File";
+import { authClient } from "@/lib/auth-client";
+import { QA_WALLETS } from "@/lib/constants";
 import ChannelUrlForm from "./ChannelUrlForm";
 import ArenaChannelResults from "./ArenaChannelResults";
 import Sidebar from "./Sidebar";
 import TrainingProgress from "./TrainingProgress";
+import PaymentGate from "./PaymentGate";
 import type { FormData } from "./types";
 
 export type TrainingPhase =
@@ -24,6 +27,28 @@ export default function ArenaChannelFetcher() {
   );
   const [trainingPhase, setTrainingPhase] = useState<TrainingPhase>("idle");
   const [trainingError, setTrainingError] = useState<string | null>(null);
+  const [showPaymentGate, setShowPaymentGate] = useState(false);
+
+  // Session + payment config for privilege checks
+  const { data: session } = authClient.useSession();
+  const ethPriceQuery = trpc.payment.getEthPrice.useQuery(undefined, {
+    enabled: !!session,
+  });
+
+  // Determine if current wallet is exempt from payment
+  const isExempt = useMemo(() => {
+    if (!session) return false;
+    const walletAddress = (session.user as Record<string, unknown>).walletAddress as string | undefined;
+    if (!walletAddress) return false;
+    const addr = walletAddress.toLowerCase();
+
+    // Check admin wallet
+    if (ethPriceQuery.data?.adminWallet && addr === ethPriceQuery.data.adminWallet.toLowerCase()) {
+      return true;
+    }
+    // Check QA wallets
+    return QA_WALLETS.some((qa) => qa.toLowerCase() === addr);
+  }, [session, ethPriceQuery.data]);
 
   const { handleSubmit, control, setValue, getValues } = useForm<FormData>({
     defaultValues: {
@@ -136,7 +161,7 @@ export default function ArenaChannelFetcher() {
     }
   };
 
-  const handleTrainLora = async () => {
+  const handleTrainLora = async (paymentTxHash?: string) => {
     const formData = getValues();
     if (!formData.selectedImages || formData.selectedImages.length === 0) {
       alert("Please select at least one image to train the LoRA");
@@ -146,6 +171,13 @@ export default function ArenaChannelFetcher() {
       alert("Please enter a trigger word for the LoRA");
       return;
     }
+
+    // If not exempt and no payment yet, show payment gate
+    if (!isExempt && !paymentTxHash) {
+      setShowPaymentGate(true);
+      return;
+    }
+
     // Reset state for new run
     setTrainingPhase("preparing");
     setTrainingError(null);
@@ -156,11 +188,22 @@ export default function ArenaChannelFetcher() {
         imageUrls: formData.selectedImages,
         triggerWord: formData.triggerWord,
         steps: formData.trainingSteps,
+        ...(paymentTxHash ? { paymentTxHash } : {}),
       });
     } catch {
       // error handled in onError callback
     }
   };
+
+  const handlePaymentComplete = useCallback(
+    (txHash: string) => {
+      setShowPaymentGate(false);
+      // Trigger training with the payment tx hash
+      handleTrainLora(txHash);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [getValues, isExempt, trainLoraMutation],
+  );
 
   const handleResetTraining = useCallback(() => {
     // Reset training state
@@ -289,6 +332,12 @@ export default function ArenaChannelFetcher() {
         onReset={handleResetTraining}
         onCancel={handleCancelTraining}
         isCancelling={cancelTrainingMutation.isPending}
+      />
+
+      <PaymentGate
+        active={showPaymentGate}
+        onClose={() => setShowPaymentGate(false)}
+        onPaymentComplete={handlePaymentComplete}
       />
     </>
   );
