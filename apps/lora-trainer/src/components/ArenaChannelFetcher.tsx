@@ -266,7 +266,6 @@ export default function ArenaChannelFetcher() {
                 <Sidebar
                   selectedImages={selectedImages}
                   control={control}
-                  onRemoveImage={(url) => handleImageSelection(url, false)}
                   onTrain={handleTrainLora}
                   onDownload={handleDownloadZip}
                   downloadMutation={downloadZipMutation}

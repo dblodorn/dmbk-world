@@ -1,6 +1,5 @@
-import { View } from "reshaped";
+import { View, Text } from "reshaped";
 import { type Control } from "react-hook-form";
-import SelectedImageList from "./SelectedImageList";
 import TrainingSettings from "./TrainingSettings";
 import StatusAlerts from "./StatusAlerts";
 import type { FormData } from "./types";
@@ -16,7 +15,6 @@ interface DownloadMutationState {
 interface SidebarProps {
   selectedImages: string[];
   control: Control<FormData>;
-  onRemoveImage: (imageUrl: string) => void;
   onTrain: () => void;
   onDownload: () => void;
   downloadMutation: DownloadMutationState;
@@ -27,35 +25,40 @@ interface SidebarProps {
 export default function Sidebar({
   selectedImages,
   control,
-  onRemoveImage,
   onTrain,
   onDownload,
   downloadMutation,
   isSubmitting,
   isTrainingActive,
 }: SidebarProps) {
+  if (selectedImages.length === 0) {
+    return (
+      <View position="sticky" insetTop={2}>
+        <Text variant="body-2" color="neutral-faded">
+          No images selected yet. Select up to 20 images from the grid.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View position="sticky" insetTop={2}>
       <View gap={2}>
-        <SelectedImageList
-          selectedImages={selectedImages}
-          onRemove={onRemoveImage}
+        <Text variant="body-2" color="neutral-faded">
+          {selectedImages.length} image{selectedImages.length !== 1 ? "s" : ""}{" "}
+          selected
+        </Text>
+
+        <TrainingSettings
+          control={control}
+          onTrain={onTrain}
+          onDownload={onDownload}
+          isTraining={isSubmitting || isTrainingActive}
+          isDownloading={downloadMutation.isPending}
+          hasSelection={selectedImages.length > 0}
         />
 
-        {selectedImages?.length > 0 && (
-          <>
-            <TrainingSettings
-              control={control}
-              onTrain={onTrain}
-              onDownload={onDownload}
-              isTraining={isSubmitting || isTrainingActive}
-              isDownloading={downloadMutation.isPending}
-              hasSelection={selectedImages.length > 0}
-            />
-
-            <StatusAlerts downloadMutation={downloadMutation} />
-          </>
-        )}
+        <StatusAlerts downloadMutation={downloadMutation} />
       </View>
     </View>
   );
