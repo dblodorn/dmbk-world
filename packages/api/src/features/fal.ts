@@ -4,6 +4,8 @@ import { protectedProcedure, router } from "../trpc";
 import { requireFalApiKey, getTrainingPriceUsd } from "../env";
 import { fal } from "@fal-ai/client";
 import JSZip from "jszip";
+import dns from "node:dns";
+import net from "node:net";
 import type { Hex } from "viem";
 import {
   isPaymentExempt,
@@ -19,23 +21,105 @@ function ensureFalConfigured() {
   fal.config({ credentials: key });
 }
 
+// --- SSRF Protection ---
+
+export const ALLOWED_IMAGE_DOMAINS: readonly string[] = [
+  "d2w9rnfcy7mm78.cloudfront.net", // are.na primary CDN
+  ".are.na", // all are.na subdomains
+] as const;
+
+export function isPrivateIP(ip: string): boolean {
+  if (net.isIPv4(ip)) {
+    const parts = ip.split(".").map(Number);
+    return (
+      parts[0] === 10 || // 10.0.0.0/8
+      parts[0] === 127 || // 127.0.0.0/8
+      (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) || // 172.16.0.0/12
+      (parts[0] === 192 && parts[1] === 168) || // 192.168.0.0/16
+      (parts[0] === 169 && parts[1] === 254) || // 169.254.0.0/16 (link-local / cloud metadata)
+      parts[0] === 0 || // 0.0.0.0/8
+      (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) || // 100.64.0.0/10 (carrier-grade NAT)
+      (parts[0] === 198 && parts[1] >= 18 && parts[1] <= 19) // 198.18.0.0/15 (benchmark)
+    );
+  }
+
+  if (net.isIPv6(ip)) {
+    const normalized = ip.toLowerCase();
+    return (
+      normalized === "::1" || // loopback
+      normalized.startsWith("fe80:") || // link-local
+      normalized.startsWith("fc") || // unique local (fc00::/7)
+      normalized.startsWith("fd") || // unique local (fc00::/7)
+      normalized === "::" || // unspecified
+      normalized.startsWith("::ffff:127.") || // IPv4-mapped loopback
+      normalized.startsWith("::ffff:10.") || // IPv4-mapped 10.x
+      normalized.startsWith("::ffff:192.168.") || // IPv4-mapped 192.168.x
+      normalized.startsWith("::ffff:169.254.") // IPv4-mapped link-local
+    );
+  }
+
+  // Unrecognized IP format — fail closed
+  return true;
+}
+
+export async function validateImageUrl(url: string): Promise<void> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Invalid URL: ${url}`);
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new Error(`Only HTTPS URLs are allowed (got ${parsed.protocol})`);
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error("URLs with credentials are not allowed");
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  const isAllowed = ALLOWED_IMAGE_DOMAINS.some((domain) => {
+    if (domain.startsWith(".")) {
+      return hostname === domain.slice(1) || hostname.endsWith(domain);
+    }
+    return hostname === domain;
+  });
+
+  if (!isAllowed) {
+    throw new Error(
+      `Domain "${hostname}" is not in the allowed list for image downloads`,
+    );
+  }
+
+  let resolved: { address: string; family: number };
+  try {
+    resolved = await dns.promises.lookup(hostname);
+  } catch {
+    throw new Error(`Failed to resolve hostname: ${hostname}`);
+  }
+
+  if (isPrivateIP(resolved.address)) {
+    throw new Error(`Hostname "${hostname}" resolves to a private IP address`);
+  }
+}
+
 // Helper function to download image from URL
 async function downloadImage(
   url: string,
 ): Promise<{ filename: string; data: Buffer }> {
+  // Validate URL safety BEFORE making any network request
+  await validateImageUrl(url);
+
   try {
     console.log(`Attempting to download image from: ${url}`);
 
     const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      },
+      redirect: "error", // Reject redirects — prevents redirect-based SSRF bypasses
     });
 
-    console.log(
-      `Response status: ${response.status} ${response.statusText} (final URL: ${response.url})`,
-    );
+    console.log(`Response status: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -133,7 +217,10 @@ async function createImageZip(imageUrls: string[]): Promise<Buffer> {
   const testZip = new JSZip();
   const loadedZip = await testZip.loadAsync(zipBuffer);
   const fileNames = Object.keys(loadedZip.files);
-  console.log(`Zip contents verification (${fileNames.length} files):`, fileNames);
+  console.log(
+    `Zip contents verification (${fileNames.length} files):`,
+    fileNames,
+  );
 
   if (fileNames.length === 0) {
     throw new Error("Zip archive was generated but contains no files");
@@ -146,7 +233,17 @@ export const falRouter = router({
   downloadImageZip: protectedProcedure
     .input(
       z.object({
-        imageUrls: z.array(z.string().url()).min(1).max(20),
+        imageUrls: z
+          .array(
+            z
+              .string()
+              .url()
+              .refine((url) => url.startsWith("https://"), {
+                message: "Only HTTPS image URLs are allowed",
+              }),
+          )
+          .min(1)
+          .max(20),
         triggerWord: z.string().min(1).max(50),
       }),
     )
@@ -188,10 +285,23 @@ export const falRouter = router({
   trainLora: protectedProcedure
     .input(
       z.object({
-        imageUrls: z.array(z.string().url()).min(1).max(20),
+        imageUrls: z
+          .array(
+            z
+              .string()
+              .url()
+              .refine((url) => url.startsWith("https://"), {
+                message: "Only HTTPS image URLs are allowed",
+              }),
+          )
+          .min(1)
+          .max(20),
         triggerWord: z.string().min(1).max(50),
         steps: z.number().min(100).max(2000).default(1000),
-        paymentTxHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional(),
+        paymentTxHash: z
+          .string()
+          .regex(/^0x[0-9a-fA-F]{64}$/)
+          .optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -205,14 +315,18 @@ export const falRouter = router({
         if (!input.paymentTxHash) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: "Payment required. Please submit a payment transaction to train.",
+            message:
+              "Payment required. Please submit a payment transaction to train.",
           });
         }
 
         try {
           const trainingPriceUsd = getTrainingPriceUsd();
           const ethPriceUsd = await getEthPriceFromUniswap();
-          const requiredEthWei = calculateRequiredEthWei(ethPriceUsd, trainingPriceUsd);
+          const requiredEthWei = calculateRequiredEthWei(
+            ethPriceUsd,
+            trainingPriceUsd,
+          );
 
           const verification = await verifyPaymentTx(
             input.paymentTxHash as Hex,
@@ -224,7 +338,10 @@ export const falRouter = router({
             `Payment verified: ${input.paymentTxHash} from ${verification.from} (${verification.value} wei)`,
           );
         } catch (error) {
-          const msg = error instanceof Error ? error.message : "Payment verification failed";
+          const msg =
+            error instanceof Error
+              ? error.message
+              : "Payment verification failed";
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: `Payment verification failed: ${msg}`,
@@ -250,7 +367,9 @@ export const falRouter = router({
         );
 
         // Upload zip file to FAL storage using Blob (better Node.js compat)
-        const zipBlob = new Blob([new Uint8Array(zipBuffer)], { type: "application/zip" });
+        const zipBlob = new Blob([new Uint8Array(zipBuffer)], {
+          type: "application/zip",
+        });
         const zipUrl = await fal.storage.upload(zipBlob);
 
         console.log(`Zip uploaded to: ${zipUrl}, submitting to queue...`);
@@ -289,7 +408,10 @@ export const falRouter = router({
           } catch (refundError) {
             console.error("Refund failed:", refundError);
             // Include refund failure info in the error message
-            const refundMsg = refundError instanceof Error ? refundError.message : "Unknown refund error";
+            const refundMsg =
+              refundError instanceof Error
+                ? refundError.message
+                : "Unknown refund error";
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: `Training failed and refund also failed: ${refundMsg}. Original payment tx: ${input.paymentTxHash}. Please contact support.`,
@@ -297,7 +419,8 @@ export const falRouter = router({
           }
         }
 
-        const trainingMsg = error instanceof Error ? error.message : "Unknown error";
+        const trainingMsg =
+          error instanceof Error ? error.message : "Unknown error";
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: refundTxHash

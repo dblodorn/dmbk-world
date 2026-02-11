@@ -10,24 +10,6 @@ This is a security audit of the `apps/lora-trainer` Next.js app and `packages/ap
 
 ### CRITICAL
 
-#### 2. SSRF — Server Fetches Arbitrary User-Provided URLs
-
-- **File:** `packages/api/src/features/fal.ts:14-73` (`downloadImage()`)
-- `imageUrls` input is `z.array(z.string().url())` — any valid URL is accepted
-- The server calls `fetch(url)` with no restrictions on destination
-- Attack vectors:
-  - `http://169.254.169.254/latest/meta-data/` — steal cloud metadata/credentials
-  - `http://localhost:3000/api/trpc/...` — hit internal services
-  - `http://internal-service:8080/admin` — reach internal network
-- The Content-Type check (`image/*`) happens **after** the request is made, so the data has already been fetched
-- The fake browser User-Agent (line 22-24) makes this worse — it helps bypass bot protections on internal services
-
-**Recommendation:**
-
-- Validate URLs against an allowlist of domains (e.g., only `*.are.na`, `d2w9rnfcy7mm78.cloudfront.net`)
-- Resolve hostnames and reject private/internal IP ranges (127.0.0.0/8, 10.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16)
-- Remove the fake browser User-Agent
-
 #### 3. No Resource Limits on Image Downloads — Memory Exhaustion DoS
 
 - **File:** `packages/api/src/features/fal.ts:76-134` (`createImageZip()`)
@@ -170,12 +152,13 @@ This is a security audit of the `apps/lora-trainer` Next.js app and `packages/ap
 
 ### COMPLETED:
 
-#### 1. No Authentication — Anyone Can Burn Your FAL.ai Credits
+#### 2. SSRF — Server Fetches Arbitrary User-Provided URLs
 
-- **Files:** `packages/api/src/trpc.ts`, `apps/lora-trainer/src/pages/api/trpc/[trpc].ts`
-- All 6 tRPC procedures use `publicProcedure` with no auth middleware
-- `createContext` is empty `() => ({})`
-- An attacker can call `fal.trainLora` repeatedly to consume your FAL.ai API credits (real money)
-- They can also call `fal.cancelTraining` to cancel your legitimate jobs
-
-**Recommendation:** Add an auth middleware. For a personal/internal tool, a simple shared secret via `Authorization` header or session-based auth is sufficient. At minimum, add IP allowlisting or a bearer token check.
+- **File:** `packages/api/src/features/fal.ts`
+- **Fix applied:**
+  - Added `validateImageUrl()` gate with HTTPS-only scheme enforcement, domain allowlist (`d2w9rnfcy7mm78.cloudfront.net`, `*.are.na`), and DNS resolution with private IP rejection
+  - Added `isPrivateIP()` helper covering all RFC 1918 ranges, link-local, carrier-grade NAT, and IPv6 equivalents
+  - Removed fake browser User-Agent from `downloadImage()`
+  - Added `redirect: "error"` to `fetch()` to block redirect-based SSRF bypasses
+  - Tightened Zod input schemas with `.refine()` for HTTPS enforcement
+  - Added vitest test suite with 55 tests covering all SSRF protection functions
