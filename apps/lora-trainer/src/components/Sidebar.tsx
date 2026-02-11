@@ -2,6 +2,7 @@ import { View, Text } from "reshaped";
 import { type Control } from "react-hook-form";
 import TrainingSettings from "./TrainingSettings";
 import StatusAlerts from "./StatusAlerts";
+import AuthGuard from "./AuthGuard";
 import type { FormData } from "./types";
 
 interface DownloadMutationState {
@@ -49,16 +50,22 @@ export default function Sidebar({
           selected
         </Text>
 
-        <TrainingSettings
-          control={control}
-          onTrain={onTrain}
-          onDownload={onDownload}
-          isTraining={isSubmitting || isTrainingActive}
-          isDownloading={downloadMutation.isPending}
-          hasSelection={selectedImages.length > 0}
-        />
-
         <StatusAlerts downloadMutation={downloadMutation} />
+
+        {selectedImages?.length > 0 && (
+          <AuthGuard>
+            <TrainingSettings
+              control={control}
+              onTrain={onTrain}
+              onDownload={onDownload}
+              isTraining={isSubmitting || isTrainingActive}
+              isDownloading={downloadMutation.isPending}
+              hasSelection={selectedImages.length > 0}
+            />
+
+            <StatusAlerts downloadMutation={downloadMutation} />
+          </AuthGuard>
+        )}
       </View>
     </View>
   );

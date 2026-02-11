@@ -1,7 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
-  "globalEnv": ["FAL_AI_API_KEY", "ENABLE_EXPERIMENTAL_COREPACK"],
+  "globalEnv": ["FAL_AI_API_KEY", "ENABLE_EXPERIMENTAL_COREPACK", "BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "ALLOWED_ADDRESSES", "TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
