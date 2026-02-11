@@ -7,5 +7,7 @@ export const QA_WALLETS = [
   "0xC2ea7d6B9766e592Eceb5e02BAA35A1272441f80",
 ] as const;
 
-// BASE Mainnet chain ID
-export const BASE_CHAIN_ID = 8453 as const;
+// Default chain ID — configurable via NEXT_PUBLIC_CHAIN_ID env var (defaults to BASE Mainnet: 8453)
+export const BASE_CHAIN_ID = Number(
+  process.env.NEXT_PUBLIC_CHAIN_ID ?? "8453",
+);

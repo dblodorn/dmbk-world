@@ -11,7 +11,6 @@ import {
   Badge,
 } from "reshaped";
 import { useAccount, useSendTransaction, useSwitchChain, useWaitForTransactionReceipt } from "wagmi";
-import { base } from "wagmi/chains";
 import { formatUnits } from "viem";
 import { trpc } from "@/utils/trpc";
 import { PAYMENT_RECIPIENT, BASE_CHAIN_ID } from "@/lib/constants";
@@ -105,7 +104,7 @@ export default function PaymentGate({
     setStep("switching");
     setError(null);
     switchChain(
-      { chainId: base.id },
+      { chainId: BASE_CHAIN_ID },
       {
         onSuccess: () => setStep("price"),
         onError: (err) => {
@@ -125,7 +124,7 @@ export default function PaymentGate({
     sendTransaction({
       to: PAYMENT_RECIPIENT as `0x${string}`,
       value: requiredWei,
-      chainId: base.id,
+      chainId: BASE_CHAIN_ID,
     });
   }, [ethPriceQuery.data, sendTransaction]);
 
