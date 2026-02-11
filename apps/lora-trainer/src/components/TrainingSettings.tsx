@@ -63,7 +63,7 @@ export default function TrainingSettings({
         <Button
           color="positive"
           fullWidth
-          onClick={onTrain}
+          onClick={() => onTrain()}
           loading={isTraining}
           disabled={!hasSelection}
         >

@@ -78,11 +78,11 @@ export default function PaymentGate({
   }, [txHash, isConfirming]);
 
   useEffect(() => {
-    if (isConfirmed && txHash) {
+    if (isConfirmed && txHash && step !== "done") {
       setStep("done");
       onPaymentComplete(txHash);
     }
-  }, [isConfirmed, txHash, onPaymentComplete]);
+  }, [isConfirmed, txHash, onPaymentComplete, step]);
 
   // Handle errors
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function PaymentGate({
     <Modal active={active} onClose={onClose} position="center" padding={6}>
       <View gap={4} direction="column">
         <View gap={1}>
-          <Text variant="title-3" weight="bold">
+          <Text variant="body-1" weight="bold">
             Training Fee
           </Text>
           <Text variant="body-2" color="neutral-faded">
@@ -170,7 +170,7 @@ export default function PaymentGate({
                     Training Cost
                   </Text>
                   <View.Item grow>
-                    <Text variant="title-3" weight="bold" align="end">
+                    <Text variant="body-2" weight="bold" align="end">
                       ${priceData.trainingPriceUsd.toFixed(2)} USD
                     </Text>
                   </View.Item>
@@ -195,7 +195,7 @@ export default function PaymentGate({
                   </Text>
                   <View.Item grow>
                     <View direction="row" align="center" justify="end" gap={2}>
-                      <Text variant="title-3" weight="bold">
+                      <Text variant="body-2" weight="bold">
                         {requiredEthFormatted} ETH
                       </Text>
                       <Badge color="neutral" size="small">

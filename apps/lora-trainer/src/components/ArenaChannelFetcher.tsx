@@ -161,7 +161,7 @@ export default function ArenaChannelFetcher() {
     }
   };
 
-  const handleTrainLora = async (paymentTxHash?: string) => {
+  const handleTrainLora = useCallback(async (paymentTxHash?: string) => {
     const formData = getValues();
     if (!formData.selectedImages || formData.selectedImages.length === 0) {
       alert("Please select at least one image to train the LoRA");
@@ -193,7 +193,7 @@ export default function ArenaChannelFetcher() {
     } catch {
       // error handled in onError callback
     }
-  };
+  }, [getValues, isExempt, trainLoraMutation]);
 
   const handlePaymentComplete = useCallback(
     (txHash: string) => {
@@ -201,8 +201,7 @@ export default function ArenaChannelFetcher() {
       // Trigger training with the payment tx hash
       handleTrainLora(txHash);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [getValues, isExempt, trainLoraMutation],
+    [handleTrainLora],
   );
 
   const handleResetTraining = useCallback(() => {
