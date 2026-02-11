@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { View, Text, Link, Alert } from "reshaped";
+import { View, Alert } from "reshaped";
 import { trpc } from "@/utils/trpc";
 import { downloadBase64File } from "@/utils/downloadBase64File";
 import ChannelUrlForm from "./ChannelUrlForm";
-import ImageGrid from "./ImageGrid";
+import ArenaChannelResults from "./ArenaChannelResults";
 import Sidebar from "./Sidebar";
 import TrainingProgress from "./TrainingProgress";
-import type { FormData, ArenaImage } from "./types";
+import type { FormData } from "./types";
 
 export type TrainingPhase =
   | "idle"
@@ -136,14 +136,6 @@ export default function ArenaChannelFetcher() {
     }
   };
 
-  const getImageUrl = (image: ArenaImage) => {
-    return (
-      image.image?.original.url ||
-      image.image?.large.url ||
-      image.image?.display.url
-    );
-  };
-
   const handleTrainLora = async () => {
     const formData = getValues();
     if (!formData.selectedImages || formData.selectedImages.length === 0) {
@@ -216,66 +208,76 @@ export default function ArenaChannelFetcher() {
 
   return (
     <>
-      <View width="100%" padding={2}>
-        <View gap={8}>
+      <View
+        width="100%"
+        height="100%"
+        padding={2}
+        direction="column"
+        attributes={{ style: { display: "flex", flexDirection: "column" } }}
+      >
+        <View
+          position="sticky"
+          insetTop={0}
+          attributes={{ style: { zIndex: 10 } }}
+          backgroundColor="page"
+          paddingBottom={2}
+        >
           <ChannelUrlForm
             control={control}
             onSubmit={handleSubmit(onSubmit)}
             isLoading={isLoading}
           />
-
-          {error && (
-            <Alert color="critical">Error: {error.message}</Alert>
-          )}
-
-          {data && (
-            <View direction={{ s: "column", l: "row" }} gap={8}>
-              <View.Item columns={{ s: 12, l: 8 }}>
-                <View gap={6}>
-                  <View gap={2}>
-                    <Text variant="title-5" weight="bold">
-                      {data.channel.title}
-                    </Text>
-                    <Text variant="body-2" color="neutral-faded">
-                      Channel:{" "}
-                      <Link
-                        href={data.channel.url}
-                        attributes={{
-                          target: "_blank",
-                          rel: "noopener noreferrer",
-                        }}
-                      >
-                        {data.channel.slug}
-                      </Link>
-                    </Text>
-                    <Text variant="body-2" color="neutral-faded">
-                      Found {data.total} images
-                    </Text>
-                  </View>
-
-                  <ImageGrid
-                    images={data.images}
-                    selectedImages={selectedImages}
-                    onImageSelect={handleImageSelection}
-                    getImageUrl={getImageUrl}
-                  />
-                </View>
-              </View.Item>
-
-              <View.Item columns={{ s: 12, l: 4 }}>
-                <Sidebar
-                  selectedImages={selectedImages}
-                  control={control}
-                  onTrain={handleTrainLora}
-                  onDownload={handleDownloadZip}
-                  downloadMutation={downloadZipMutation}
-                  isSubmitting={trainLoraMutation.isPending}
-                  isTrainingActive={isTrainingActive}
-                />
-              </View.Item>
-            </View>
-          )}
         </View>
+
+        {error && (
+          <Alert color="critical">Error: {error.message}</Alert>
+        )}
+
+        {data && (
+          <View
+            direction={{ s: "column", l: "row" }}
+            gap={2}
+            attributes={{
+              style: { flex: "1 1 0%", minHeight: 0, overflow: "hidden" },
+            }}
+          >
+            <View.Item
+              columns={{ s: 12, l: 9 }}
+              attributes={{ style: { height: "100%", overflow: "hidden" } }}
+            >
+              <View
+                className="scrollbar-hidden"
+                padding={1}
+                attributes={{
+                  style: { height: "100%", overflowY: "auto" },
+                }}
+              >
+                <ArenaChannelResults
+                  channel={data.channel}
+                  total={data.total}
+                  images={data.images}
+                  selectedImages={selectedImages}
+                  onImageSelect={handleImageSelection}
+                />
+              </View>
+            </View.Item>
+
+            <View.Item
+              columns={{ s: 12, l: 3 }}
+              attributes={{ style: { height: "100%", overflowY: "auto" } }}
+            >
+              <Sidebar
+                selectedImages={selectedImages}
+                control={control}
+                onTrain={handleTrainLora}
+                onDownload={handleDownloadZip}
+                downloadMutation={downloadZipMutation}
+                isSubmitting={trainLoraMutation.isPending}
+                isTrainingActive={isTrainingActive}
+              />
+            </View.Item>
+          </View>
+        )}
       </View>
 
       <TrainingProgress

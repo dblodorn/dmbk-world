@@ -3,7 +3,7 @@ import ArenaChannelFetcher from "@/components/ArenaChannelFetcher";
 
 export default function Home() {
   return (
-    <View minHeight="100vh">
+    <View height="100vh" overflow="hidden">
       <ArenaChannelFetcher />
     </View>
   );

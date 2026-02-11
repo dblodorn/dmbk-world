@@ -1,4 +1,4 @@
-import { Card, Checkbox, Text, Link, View } from "reshaped";
+import { Actionable, Card, Checkbox, Image, Text, Link, View } from "reshaped";
 import type { ArenaImage } from "./types";
 
 interface ImageCardProps {
@@ -32,17 +32,31 @@ export default function ImageCard({
             disabled={!canSelect}
           />
         </View>
-        <img
-          src={imageUrl}
-          alt={image.title || "Untitled"}
-          style={{
-            width: "100%",
-            height: 192,
-            objectFit: "cover",
-            display: "block",
-            opacity: !canSelect ? 0.5 : 1,
-          }}
-        />
+        <View attributes={{ style: { aspectRatio: 16 / 9 } }}>
+          <Actionable
+            onClick={() => onSelect(imageUrl, !isSelected)}
+            disabled={!canSelect}
+            attributes={{
+              style: {
+                width: "100%",
+                height: "100%",
+              },
+            }}
+          >
+            <Image
+              src={imageUrl}
+              alt={image.title || "Untitled"}
+              width="100%"
+              height="100%"
+              displayMode="cover"
+              attributes={{
+                style: {
+                  opacity: !canSelect ? 0.5 : 1,
+                },
+              }}
+            />
+          </Actionable>
+        </View>
         <View padding={3} gap={1}>
           <Text variant="body-2" weight="medium" maxLines={1}>
             {image.title || "Untitled"}

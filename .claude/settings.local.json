@@ -28,7 +28,9 @@
       "Bash(git branch:*)",
       "Bash(git worktree add:*)",
       "Bash(pnpm --filter lora-trainer add:*)",
-      "Bash(pnpm --filter lora-trainer ls:*)"
+      "Bash(pnpm --filter lora-trainer ls:*)",
+      "Bash(pnpm --filter @dmbk-world/api build:*)",
+      "Bash(npx @better-auth/cli migrate:*)"
     ],
     "deny": []
   }
