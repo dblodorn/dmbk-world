@@ -39,6 +39,8 @@
     "./themes/reshaped/*": "./dist/themes/reshaped/*",
     "./themes/slate/*": "./dist/themes/slate/*",
     "./themes/figma/*": "./dist/themes/figma/*",
+    "./themes/dmbk/*": "./dist/themes/dmbk/*",
+    "./themes/lora-trainer/*": "./dist/themes/lora-trainer/*",
     "./themes/fragments/twitter/*": "./dist/themes/fragments/twitter/*",
     "./package.json": "./package.json"
   },

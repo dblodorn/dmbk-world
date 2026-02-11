@@ -26,7 +26,9 @@
       "WebSearch",
       "WebFetch(domain:www.better-auth.com)",
       "Bash(git branch:*)",
-      "Bash(git worktree add:*)"
+      "Bash(git worktree add:*)",
+      "Bash(pnpm --filter lora-trainer add:*)",
+      "Bash(pnpm --filter lora-trainer ls:*)"
     ],
     "deny": []
   }

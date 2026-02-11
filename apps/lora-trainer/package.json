@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:themes": "reshaped theming --output src/themes",
+    "build:themes": "reshaped theming --output ../../packages/reshaped/src/themes",
     "start": "next start",
     "lint": "next lint"
   },
