@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Reshaped } from "reshaped";
 import { WagmiProvider } from "wagmi";
 import { wagmiConfig } from "@/lib/wagmi";
+import AuthModalProvider from "@/components/AuthModalProvider";
 
 export default function App({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(() => new QueryClient());
@@ -27,7 +28,9 @@ export default function App({ Component, pageProps }: AppProps) {
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
           <Reshaped theme="lora-trainer">
-            <Component {...pageProps} />
+            <AuthModalProvider>
+              <Component {...pageProps} />
+            </AuthModalProvider>
           </Reshaped>
         </QueryClientProvider>
       </trpc.Provider>

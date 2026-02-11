@@ -1,26 +1,17 @@
 import { View, Button } from "reshaped";
-import { useRouter } from "next/router";
 import { authClient } from "@/lib/auth-client";
+import { useAuthModal } from "./AuthModalProvider";
 
 export default function WalletStatus() {
-  const router = useRouter();
+  const { openAuthModal } = useAuthModal();
   const { data: session, isPending } = authClient.useSession();
 
   if (isPending) return null;
 
   return (
-    <View
-      position="fixed"
-      insetEnd={2}
-      insetBottom={2}
-      width={112 / 4}
-    >
+    <View position="fixed" insetEnd={2} insetBottom={2} width={112 / 4}>
       {!session ? (
-        <Button
-          fullWidth
-          color="primary"
-          onClick={() => router.push("/auth/signin")}
-        >
+        <Button fullWidth color="primary" onClick={openAuthModal}>
           AUTH
         </Button>
       ) : (
@@ -29,7 +20,6 @@ export default function WalletStatus() {
           color="primary"
           onClick={async () => {
             await authClient.signOut();
-            router.push("/");
           }}
         >
           Sign Out
