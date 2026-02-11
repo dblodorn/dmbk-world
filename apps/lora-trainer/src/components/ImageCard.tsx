@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Actionable, Card, Checkbox, Image, Text, Link, View } from "reshaped";
 import type { ArenaImage } from "./types";
 
@@ -16,6 +17,8 @@ export default function ImageCard({
   canSelect,
   onSelect,
 }: ImageCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <Card selected={isSelected} padding={0}>
       <View position="relative">
@@ -32,7 +35,13 @@ export default function ImageCard({
             disabled={!canSelect}
           />
         </View>
-        <View attributes={{ style: { aspectRatio: 16 / 9 } }}>
+        <View
+          attributes={{
+            style: { aspectRatio: 4 / 3 },
+            onMouseEnter: () => setIsHovered(true),
+            onMouseLeave: () => setIsHovered(false),
+          }}
+        >
           <Actionable
             onClick={() => onSelect(imageUrl, !isSelected)}
             disabled={!canSelect}
@@ -48,7 +57,7 @@ export default function ImageCard({
               alt={image.title || "Untitled"}
               width="100%"
               height="100%"
-              displayMode="cover"
+              displayMode={isHovered ? "contain" : "cover"}
               attributes={{
                 style: {
                   opacity: !canSelect ? 0.5 : 1,
