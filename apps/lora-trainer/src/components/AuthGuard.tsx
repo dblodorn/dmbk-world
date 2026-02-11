@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { View, Text, Button, Card } from "reshaped";
+import { View, Text, Button, Card, Loader } from "reshaped";
 import { authClient } from "@/lib/auth-client";
 import { useAuthModal } from "./AuthModalProvider";
 
@@ -11,7 +11,13 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const { openAuthModal } = useAuthModal();
   const { data: session, isPending } = authClient.useSession();
 
-  if (isPending) return null;
+  if (isPending) {
+    return (
+      <View align="center" justify="center" padding={4}>
+        <Loader />
+      </View>
+    );
+  }
 
   if (!session) {
     return (
