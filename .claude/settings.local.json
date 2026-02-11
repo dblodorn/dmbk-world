@@ -24,7 +24,9 @@
       "Bash(git push:*)",
       "Bash(pnpm audit:*)",
       "WebSearch",
-      "WebFetch(domain:www.better-auth.com)"
+      "WebFetch(domain:www.better-auth.com)",
+      "Bash(git branch:*)",
+      "Bash(git worktree add:*)"
     ],
     "deny": []
   }
