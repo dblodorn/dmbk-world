@@ -28,6 +28,7 @@ export default function ArenaChannelFetcher() {
 
   const { handleSubmit, control, setValue, getValues } = useForm<FormData>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       url: "",
       selectedImages: [],
