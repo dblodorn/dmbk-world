@@ -1,4 +1,4 @@
-import { View, TextField, Button } from "reshaped";
+import { View, TextField, Button, Text } from "reshaped";
 import { Controller, type Control } from "react-hook-form";
 import type { FormData } from "./types";
 
@@ -29,15 +29,22 @@ export default function ChannelUrlForm({
           <Controller
             name="url"
             control={control}
-            rules={{ required: true }}
-            render={({ field }) => (
-              <TextField
-                name="url"
-                value={field.value}
-                onChange={({ value }) => field.onChange(value)}
-                placeholder="Enter are.na channel URL (e.g., https://www.are.na/dain-blodorn-kim/earth-s-objects)"
-                inputAttributes={{ type: "url" }}
-              />
+            render={({ field, fieldState }) => (
+              <View direction="column" gap={1}>
+                <TextField
+                  name="url"
+                  value={field.value}
+                  onChange={({ value }) => field.onChange(value)}
+                  placeholder="Enter are.na channel URL (e.g., https://www.are.na/dain-blodorn-kim/earth-s-objects)"
+                  hasError={!!fieldState.error}
+                  inputAttributes={{ type: "url" }}
+                />
+                {fieldState.error && (
+                  <Text variant="caption-1" color="critical">
+                    {fieldState.error.message}
+                  </Text>
+                )}
+              </View>
             )}
           />
         </View.Item>

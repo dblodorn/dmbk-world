@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { View, Alert } from "reshaped";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { trpc } from "@/utils/trpc";
 import { downloadBase64File } from "@/utils/downloadBase64File";
 import ChannelUrlForm from "./ChannelUrlForm";
 import ArenaChannelResults from "./ArenaChannelResults";
 import Sidebar from "./Sidebar";
 import TrainingProgress from "./TrainingProgress";
-import type { FormData } from "./types";
+import { formSchema, type FormData } from "./types";
 
 export type TrainingPhase =
   | "idle"
@@ -26,6 +27,7 @@ export default function ArenaChannelFetcher() {
   const [trainingError, setTrainingError] = useState<string | null>(null);
 
   const { handleSubmit, control, setValue, getValues } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       url: "",
       selectedImages: [],
