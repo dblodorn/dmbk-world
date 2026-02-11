@@ -3,6 +3,7 @@ import { type Control } from "react-hook-form";
 import SelectedImageList from "./SelectedImageList";
 import TrainingSettings from "./TrainingSettings";
 import StatusAlerts from "./StatusAlerts";
+import AuthGuard from "./AuthGuard";
 import type { FormData } from "./types";
 
 interface DownloadMutationState {
@@ -43,7 +44,7 @@ export default function Sidebar({
         />
 
         {selectedImages?.length > 0 && (
-          <>
+          <AuthGuard>
             <TrainingSettings
               control={control}
               onTrain={onTrain}
@@ -54,7 +55,7 @@ export default function Sidebar({
             />
 
             <StatusAlerts downloadMutation={downloadMutation} />
-          </>
+          </AuthGuard>
         )}
       </View>
     </View>
