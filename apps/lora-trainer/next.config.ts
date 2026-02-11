@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@dmbk-world/api", "reshaped"],
+  transpilePackages: ["@dmbk-world/api"],
   experimental: {
     optimizePackageImports: ["reshaped"],
   },
