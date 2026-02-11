@@ -24,7 +24,7 @@ export default function ChannelUrlForm({
         },
       }}
     >
-      <View direction="row">
+      <View direction="row" gap={2}>
         <View.Item grow>
           <Controller
             name="url"

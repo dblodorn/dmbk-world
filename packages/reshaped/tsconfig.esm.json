@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Node"
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tools",
+    "src/utilities/testPresets.tsx",
+    "./src/**/*.test.tsx",
+    "./src/**/*.test.ts",
+    "./src/**/*.stories.tsx"
+  ]
+}

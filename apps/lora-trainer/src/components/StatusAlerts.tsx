@@ -8,19 +8,13 @@ interface MutationState {
 }
 
 interface StatusAlertsProps {
-  trainMutation: MutationState;
   downloadMutation: MutationState;
 }
 
 export default function StatusAlerts({
-  trainMutation,
   downloadMutation,
 }: StatusAlertsProps) {
-  const hasAlerts =
-    downloadMutation.isError ||
-    downloadMutation.isSuccess ||
-    trainMutation.isError ||
-    trainMutation.isSuccess;
+  const hasAlerts = downloadMutation.isError || downloadMutation.isSuccess;
 
   if (!hasAlerts) return null;
 
@@ -39,31 +33,6 @@ export default function StatusAlerts({
             <Text variant="caption-1" color="neutral-faded">
               Check your Downloads folder for the zip file.
             </Text>
-          </View>
-        </Alert>
-      )}
-
-      {trainMutation.isError && (
-        <Alert color="critical" title="Training Error">
-          {trainMutation.error?.message}
-        </Alert>
-      )}
-
-      {trainMutation.isSuccess && (
-        <Alert color="positive" title="Training Started">
-          <View gap={2}>
-            <Text variant="body-2">LoRA training started successfully!</Text>
-            <pre
-              style={{
-                fontSize: 12,
-                background: "var(--rs-color-background-elevation-raised)",
-                padding: 8,
-                borderRadius: 4,
-                overflow: "auto",
-              }}
-            >
-              {JSON.stringify(trainMutation.data, null, 2)}
-            </pre>
           </View>
         </Alert>
       )}

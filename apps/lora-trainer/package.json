@@ -19,7 +19,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
-    "reshaped": "^3.5.1",
+    "reshaped": "workspace:*",
     "zod": "^3.22.4"
   },
   "devDependencies": {

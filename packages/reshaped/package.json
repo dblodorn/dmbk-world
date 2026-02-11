@@ -1,0 +1,88 @@
+{
+  "name": "reshaped",
+  "version": "3.9.0",
+  "private": true,
+  "description": "Vendored Reshaped design system — source from github.com/reshaped-ui/reshaped at v3.9.0",
+  "license": "MIT",
+  "sideEffects": [
+    "*.css"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./themes": {
+      "types": "./dist/themes/index.d.ts",
+      "import": "./dist/themes/index.js",
+      "default": "./dist/themes/index.js"
+    },
+    "./config/postcss": {
+      "types": "./dist/config/postcss.d.ts",
+      "import": "./dist/config/postcss.js",
+      "default": "./dist/config/postcss.cjs"
+    },
+    "./config/tailwind": {
+      "types": "./dist/config/tailwind.d.ts",
+      "import": "./dist/config/tailwind.js",
+      "default": "./dist/config/tailwind.js"
+    },
+    "./bundle": {
+      "types": "./dist/bundle.d.ts",
+      "import": "./dist/bundle.js",
+      "default": "./dist/bundle.js"
+    },
+    "./bundle.css": "./dist/bundle.css",
+    "./globals.css": "./dist/globals.css",
+    "./themes/reshaped/*": "./dist/themes/reshaped/*",
+    "./themes/slate/*": "./dist/themes/slate/*",
+    "./themes/figma/*": "./dist/themes/figma/*",
+    "./themes/fragments/twitter/*": "./dist/themes/fragments/twitter/*",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "reshaped": "./bin/cli.js"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "pnpm clean && pnpm build:esm && pnpm build:css && pnpm build:bundle && pnpm build:extract-globals",
+    "build:esm": "tsc -p tsconfig.esm.json && resolve-tspaths -p tsconfig.esm.json",
+    "build:css": "postcss \"src/**/*.css\" --dir dist --base src --config tools/build",
+    "build:bundle": "vite build && cp dist/index.d.ts dist/bundle.d.ts",
+    "build:extract-globals": "node scripts/extract-globals.mjs"
+  },
+  "browserslist": [
+    "defaults and not IE 11"
+  ],
+  "peerDependencies": {
+    "postcss": "^8",
+    "react": "^18 || ^19",
+    "react-dom": "^18 || ^19"
+  },
+  "dependencies": {
+    "@csstools/postcss-global-data": "3.1.0",
+    "chalk": "4.1.2",
+    "commander": "14.0.2",
+    "cssnano": "7.1.1",
+    "csstype": "3.1.3",
+    "culori": "4.0.2",
+    "postcss-custom-media": "11.0.6"
+  },
+  "devDependencies": {
+    "@types/culori": "^4.0.1",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.0",
+    "postcss": "^8.5.0",
+    "postcss-cli": "^11.0.1",
+    "postcss-each": "^1.1.0",
+    "postcss-nested": "^7.0.2",
+    "resolve-tspaths": "^0.8.23",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}

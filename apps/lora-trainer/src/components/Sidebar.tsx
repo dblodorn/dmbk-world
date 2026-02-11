@@ -5,7 +5,7 @@ import TrainingSettings from "./TrainingSettings";
 import StatusAlerts from "./StatusAlerts";
 import type { FormData } from "./types";
 
-interface MutationState {
+interface DownloadMutationState {
   isError: boolean;
   isSuccess: boolean;
   isPending: boolean;
@@ -19,8 +19,9 @@ interface SidebarProps {
   onRemoveImage: (imageUrl: string) => void;
   onTrain: () => void;
   onDownload: () => void;
-  trainMutation: MutationState;
-  downloadMutation: MutationState;
+  downloadMutation: DownloadMutationState;
+  isSubmitting: boolean;
+  isTrainingActive: boolean;
 }
 
 export default function Sidebar({
@@ -29,8 +30,9 @@ export default function Sidebar({
   onRemoveImage,
   onTrain,
   onDownload,
-  trainMutation,
   downloadMutation,
+  isSubmitting,
+  isTrainingActive,
 }: SidebarProps) {
   return (
     <View position="sticky" insetTop={2}>
@@ -46,15 +48,12 @@ export default function Sidebar({
               control={control}
               onTrain={onTrain}
               onDownload={onDownload}
-              isTraining={trainMutation.isPending}
+              isTraining={isSubmitting || isTrainingActive}
               isDownloading={downloadMutation.isPending}
               hasSelection={selectedImages.length > 0}
             />
 
-            <StatusAlerts
-              trainMutation={trainMutation}
-              downloadMutation={downloadMutation}
-            />
+            <StatusAlerts downloadMutation={downloadMutation} />
           </>
         )}
       </View>

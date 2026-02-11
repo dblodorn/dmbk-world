@@ -1,0 +1,21 @@
+.menu {
+	padding: var(--rs-unit-x1);
+}
+
+.section + .section {
+	margin-top: var(--rs-unit-x1);
+	padding-top: var(--rs-unit-x1);
+	border-top: 1px solid var(--rs-color-border-neutral-faded);
+}
+
+.item {
+	margin-top: var(--rs-unit-x1);
+
+	&:first-child {
+		margin-top: 0;
+	}
+}
+
+[dir="rtl"] .arrow {
+	transform: scaleX(-1);
+}

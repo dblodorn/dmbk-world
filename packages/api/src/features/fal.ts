@@ -203,26 +203,25 @@ export const falRouter = router({
         const zipBlob = new Blob([new Uint8Array(zipBuffer)], { type: "application/zip" });
         const zipUrl = await fal.storage.upload(zipBlob);
 
-        console.log(`Zip uploaded to: ${zipUrl}, starting LoRA training...`);
+        console.log(`Zip uploaded to: ${zipUrl}, submitting to queue...`);
 
-        // Start LoRA training with uploaded zip
-        const result = await fal.subscribe("fal-ai/flux-lora-fast-training", {
-          input: {
-            images_data_url: zipUrl,
-            trigger_word: input.triggerWord,
-            steps: input.steps,
+        // Submit to queue instead of blocking with subscribe
+        const { request_id } = await fal.queue.submit(
+          "fal-ai/flux-lora-fast-training",
+          {
+            input: {
+              images_data_url: zipUrl,
+              trigger_word: input.triggerWord,
+              steps: input.steps,
+            },
           },
-          logs: true,
-          onQueueUpdate: (update: any) => {
-            console.log("Queue update:", update);
-          },
-        });
+        );
+
+        console.log(`Training submitted to queue: ${request_id}`);
 
         return {
-          success: true,
-          data: result,
-          message: "LoRA training completed successfully",
-          zipUrl: zipUrl, // Include zip URL for reference
+          requestId: request_id,
+          zipUrl,
         };
       } catch (error) {
         console.error("LoRA training error:", error);
@@ -238,20 +237,81 @@ export const falRouter = router({
     .input(z.object({ requestId: z.string() }))
     .query(async ({ input }) => {
       try {
-        // Note: Status checking might not be directly available in this version
-        // For now, we'll return a placeholder response
-        return {
-          success: true,
-          data: {
-            status: "IN_PROGRESS",
+        ensureFalConfigured();
+
+        const status = await fal.queue.status(
+          "fal-ai/flux-lora-fast-training",
+          {
             requestId: input.requestId,
-            message: "Training status check not yet implemented",
+            logs: true,
           },
+        );
+
+        return {
+          status: status.status,
+          logs:
+            "logs" in status && Array.isArray(status.logs)
+              ? (status.logs as { timestamp: string; message: string }[])
+              : [],
+          ...(status.status === "IN_QUEUE" &&
+            "queue_position" in status && {
+              queuePosition: (status as any).queue_position as number,
+            }),
         };
       } catch (error) {
         console.error("Training status error:", error);
         throw new Error(
           `Failed to get training status: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+        );
+      }
+    }),
+
+  cancelTraining: publicProcedure
+    .input(z.object({ requestId: z.string() }))
+    .mutation(async ({ input }) => {
+      try {
+        ensureFalConfigured();
+
+        await fal.queue.cancel("fal-ai/flux-lora-fast-training", {
+          requestId: input.requestId,
+        });
+
+        console.log(`Training cancelled: ${input.requestId}`);
+
+        return { success: true };
+      } catch (error) {
+        console.error("Cancel training error:", error);
+        throw new Error(
+          `Failed to cancel training: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+        );
+      }
+    }),
+
+  getTrainingResult: publicProcedure
+    .input(z.object({ requestId: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        ensureFalConfigured();
+
+        const result = await fal.queue.result(
+          "fal-ai/flux-lora-fast-training",
+          {
+            requestId: input.requestId,
+          },
+        );
+
+        return {
+          data: result.data as Record<string, unknown>,
+          requestId: result.requestId,
+        };
+      } catch (error) {
+        console.error("Training result error:", error);
+        throw new Error(
+          `Failed to get training result: ${
             error instanceof Error ? error.message : "Unknown error"
           }`,
         );

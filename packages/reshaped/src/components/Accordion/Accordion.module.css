@@ -1,0 +1,7 @@
+.icon {
+	transition: transform var(--rs-duration-fast) var(--rs-easing-standard);
+}
+
+.icon--active {
+	transform: rotate(180deg);
+}
