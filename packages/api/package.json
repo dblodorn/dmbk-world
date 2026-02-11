@@ -12,6 +12,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -23,8 +25,9 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/node": "^20.10.6",
     "@types/jszip": "^3.4.1",
-    "typescript": "^5.3.3"
+    "@types/node": "^20.10.6",
+    "typescript": "^5.3.3",
+    "vitest": "^4.0.18"
   }
 }

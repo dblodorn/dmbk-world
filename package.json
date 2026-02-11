@@ -6,6 +6,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "dev:lora-trainer": "turbo dev --filter=lora-trainer",
+    "test": "turbo test",
     "lint": "turbo lint",
     "clean": "turbo clean"
   },

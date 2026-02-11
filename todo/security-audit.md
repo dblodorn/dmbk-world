@@ -161,3 +161,16 @@ This is a security audit of the `apps/lora-trainer` Next.js app and `packages/ap
 - Verify rate limiting by sending rapid requests
 - Check response headers with `curl -I http://localhost:3000` for security headers
 - Run `pnpm audit` to verify dependency vulnerabilities are resolved
+
+### COMPLETED:
+
+#### 2. SSRF — Server Fetches Arbitrary User-Provided URLs
+
+- **File:** `packages/api/src/features/fal.ts`
+- **Fix applied:**
+  - Added `validateImageUrl()` gate with HTTPS-only scheme enforcement, domain allowlist (`d2w9rnfcy7mm78.cloudfront.net`, `*.are.na`), and DNS resolution with private IP rejection
+  - Added `isPrivateIP()` helper covering all RFC 1918 ranges, link-local, carrier-grade NAT, and IPv6 equivalents
+  - Removed fake browser User-Agent from `downloadImage()`
+  - Added `redirect: "error"` to `fetch()` to block redirect-based SSRF bypasses
+  - Tightened Zod input schemas with `.refine()` for HTTPS enforcement
+  - Added vitest test suite with 55 tests covering all SSRF protection functions
