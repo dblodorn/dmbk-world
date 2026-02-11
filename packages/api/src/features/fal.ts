@@ -1,10 +1,19 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../trpc";
-import { requireFalApiKey } from "../env";
+import { requireFalApiKey, getTrainingPriceUsd } from "../env";
 import { fal } from "@fal-ai/client";
 import JSZip from "jszip";
 import dns from "node:dns";
 import net from "node:net";
+import type { Hex } from "viem";
+import {
+  isPaymentExempt,
+  verifyPaymentTx,
+  getEthPriceFromUniswap,
+  calculateRequiredEthWei,
+  sendRefund,
+} from "./payment";
 
 // Configure fal client lazily — credentials are validated per-request
 function ensureFalConfigured() {
@@ -62,9 +71,7 @@ export async function validateImageUrl(url: string): Promise<void> {
   }
 
   if (parsed.protocol !== "https:") {
-    throw new Error(
-      `Only HTTPS URLs are allowed (got ${parsed.protocol})`,
-    );
+    throw new Error(`Only HTTPS URLs are allowed (got ${parsed.protocol})`);
   }
 
   if (parsed.username || parsed.password) {
@@ -94,9 +101,7 @@ export async function validateImageUrl(url: string): Promise<void> {
   }
 
   if (isPrivateIP(resolved.address)) {
-    throw new Error(
-      `Hostname "${hostname}" resolves to a private IP address`,
-    );
+    throw new Error(`Hostname "${hostname}" resolves to a private IP address`);
   }
 }
 
@@ -114,9 +119,7 @@ async function downloadImage(
       redirect: "error", // Reject redirects — prevents redirect-based SSRF bypasses
     });
 
-    console.log(
-      `Response status: ${response.status} ${response.statusText}`,
-    );
+    console.log(`Response status: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -214,7 +217,10 @@ async function createImageZip(imageUrls: string[]): Promise<Buffer> {
   const testZip = new JSZip();
   const loadedZip = await testZip.loadAsync(zipBuffer);
   const fileNames = Object.keys(loadedZip.files);
-  console.log(`Zip contents verification (${fileNames.length} files):`, fileNames);
+  console.log(
+    `Zip contents verification (${fileNames.length} files):`,
+    fileNames,
+  );
 
   if (fileNames.length === 0) {
     throw new Error("Zip archive was generated but contains no files");
@@ -227,12 +233,17 @@ export const falRouter = router({
   downloadImageZip: protectedProcedure
     .input(
       z.object({
-        imageUrls: z.array(
-          z.string().url().refine(
-            (url) => url.startsWith("https://"),
-            { message: "Only HTTPS image URLs are allowed" },
-          ),
-        ).min(1).max(20),
+        imageUrls: z
+          .array(
+            z
+              .string()
+              .url()
+              .refine((url) => url.startsWith("https://"), {
+                message: "Only HTTPS image URLs are allowed",
+              }),
+          )
+          .min(1)
+          .max(20),
         triggerWord: z.string().min(1).max(50),
       }),
     )
@@ -274,17 +285,73 @@ export const falRouter = router({
   trainLora: protectedProcedure
     .input(
       z.object({
-        imageUrls: z.array(
-          z.string().url().refine(
-            (url) => url.startsWith("https://"),
-            { message: "Only HTTPS image URLs are allowed" },
-          ),
-        ).min(1).max(20),
+        imageUrls: z
+          .array(
+            z
+              .string()
+              .url()
+              .refine((url) => url.startsWith("https://"), {
+                message: "Only HTTPS image URLs are allowed",
+              }),
+          )
+          .min(1)
+          .max(20),
         triggerWord: z.string().min(1).max(50),
         steps: z.number().min(100).max(2000).default(1000),
+        paymentTxHash: z
+          .string()
+          .regex(/^0x[0-9a-fA-F]{64}$/)
+          .optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const walletAddress = ctx.session.user.walletAddress;
+      const exempt = isPaymentExempt(walletAddress);
+
+      // ── Payment verification ──────────────────────────────────────
+      let paymentValue: bigint | null = null;
+
+      if (!exempt) {
+        if (!input.paymentTxHash) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message:
+              "Payment required. Please submit a payment transaction to train.",
+          });
+        }
+
+        try {
+          const trainingPriceUsd = getTrainingPriceUsd();
+          const ethPriceUsd = await getEthPriceFromUniswap();
+          const requiredEthWei = calculateRequiredEthWei(
+            ethPriceUsd,
+            trainingPriceUsd,
+          );
+
+          const verification = await verifyPaymentTx(
+            input.paymentTxHash as Hex,
+            requiredEthWei,
+          );
+          paymentValue = verification.value;
+
+          console.log(
+            `Payment verified: ${input.paymentTxHash} from ${verification.from} (${verification.value} wei)`,
+          );
+        } catch (error) {
+          const msg =
+            error instanceof Error
+              ? error.message
+              : "Payment verification failed";
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Payment verification failed: ${msg}`,
+          });
+        }
+      } else {
+        console.log(`Payment exempt for wallet: ${walletAddress}`);
+      }
+
+      // ── Training execution ────────────────────────────────────────
       try {
         ensureFalConfigured();
 
@@ -300,7 +367,9 @@ export const falRouter = router({
         );
 
         // Upload zip file to FAL storage using Blob (better Node.js compat)
-        const zipBlob = new Blob([new Uint8Array(zipBuffer)], { type: "application/zip" });
+        const zipBlob = new Blob([new Uint8Array(zipBuffer)], {
+          type: "application/zip",
+        });
         const zipUrl = await fal.storage.upload(zipBlob);
 
         console.log(`Zip uploaded to: ${zipUrl}, submitting to queue...`);
@@ -322,14 +391,42 @@ export const falRouter = router({
         return {
           requestId: request_id,
           zipUrl,
+          refundTxHash: null as string | null,
         };
       } catch (error) {
         console.error("LoRA training error:", error);
-        throw new Error(
-          `LoRA training failed: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-        );
+
+        // ── Auto-refund on FAL failure ────────────────────────────────
+        let refundTxHash: string | null = null;
+        if (!exempt && paymentValue && input.paymentTxHash) {
+          try {
+            console.log(
+              `FAL failed — initiating refund of ${paymentValue} wei to ${walletAddress}`,
+            );
+            refundTxHash = await sendRefund(walletAddress, paymentValue);
+            console.log(`Refund sent: ${refundTxHash}`);
+          } catch (refundError) {
+            console.error("Refund failed:", refundError);
+            // Include refund failure info in the error message
+            const refundMsg =
+              refundError instanceof Error
+                ? refundError.message
+                : "Unknown refund error";
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: `Training failed and refund also failed: ${refundMsg}. Original payment tx: ${input.paymentTxHash}. Please contact support.`,
+            });
+          }
+        }
+
+        const trainingMsg =
+          error instanceof Error ? error.message : "Unknown error";
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: refundTxHash
+            ? `Training failed. Your ETH has been refunded (tx: ${refundTxHash}). Error: ${trainingMsg}`
+            : `LoRA training failed: ${trainingMsg}`,
+        });
       }
     }),
 

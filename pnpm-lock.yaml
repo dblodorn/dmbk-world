@@ -17,6 +17,9 @@ importers:
       '@dmbk-world/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@hookform/resolvers':
+        specifier: ^5.2.2
+        version: 5.2.2(react-hook-form@7.60.0)
       '@libsql/kysely-libsql':
         specifier: ^0.4.1
         version: 0.4.1(kysely@0.28.11)
@@ -102,6 +105,9 @@ importers:
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
+      viem:
+        specifier: ^2.45.2
+        version: 2.45.2(typescript@5.8.3)(zod@3.25.76)
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -765,6 +771,15 @@ packages:
       '@msgpack/msgpack': 3.1.2
       eventsource-parser: 1.1.2
       robot3: 0.4.1
+    dev: false
+
+  /@hookform/resolvers@5.2.2(react-hook-form@7.60.0):
+    resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
+    peerDependencies:
+      react-hook-form: ^7.55.0
+    dependencies:
+      '@standard-schema/utils': 0.3.0
+      react-hook-form: 7.60.0(react@19.1.0)
     dev: false
 
   /@humanfs/core@0.19.1:
@@ -1527,6 +1542,10 @@ packages:
 
   /@standard-schema/spec@1.1.0:
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
+  /@standard-schema/utils@0.3.0:
+    resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
+    dev: false
 
   /@swc/helpers@0.5.15:
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}

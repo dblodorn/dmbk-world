@@ -22,6 +22,7 @@
     "are.na": "^0.1.5",
     "dotenv": "^16.4.5",
     "jszip": "^3.10.1",
+    "viem": "^2.45.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {

@@ -25,6 +25,12 @@ TURSO_AUTH_TOKEN=your-turso-auth-token
 
 # FAL.ai (server-side only)
 FAL_AI_API_KEY=your_fal_ai_api_key
+
+# Payment (ETH on BASE)
+TRAINING_PRICE_USD=4                          # USD per training run (default: 4)
+ADMIN_WALLET=0xYOUR_ADMIN_WALLET              # exempt from payment gate
+PAYMENT_WALLET_PRIVATE_KEY=your_private_key   # for signing refund txs
+NEXT_PUBLIC_CHAIN_ID=8453                     # BASE Mainnet (default: 8453)
 ```
 
 ### Database Setup
@@ -74,5 +80,9 @@ Set the following in your Vercel project's Environment Variables settings:
 | `TURSO_DATABASE_URL` | Turso database URL (auto-populated if using Vercel Turso integration) |
 | `TURSO_AUTH_TOKEN`   | Turso auth token (auto-populated if using Vercel Turso integration)   |
 | `FAL_AI_API_KEY`     | [FAL.ai](https://fal.ai/dashboard) API key                            |
+| `TRAINING_PRICE_USD` | USD price per training run (default: `4`)                              |
+| `ADMIN_WALLET`       | Admin wallet address (exempt from payment)                             |
+| `PAYMENT_WALLET_PRIVATE_KEY` | Private key for the payment/refund wallet                      |
+| `NEXT_PUBLIC_CHAIN_ID` | Chain ID for payment network (default: `8453` / BASE Mainnet)        |
 
 If you created your Turso database through the Vercel Storage integration, `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` are linked automatically.
