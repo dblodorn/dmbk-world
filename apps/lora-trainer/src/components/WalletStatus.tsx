@@ -7,8 +7,6 @@ export default function WalletStatus() {
   const { openAuthModal } = useAuthModal();
   const { data: session, isPending } = authClient.useSession();
 
-  console.log(isPending, session);
-
   const handleClick = useCallback(() => {
     if (session) {
       authClient.signOut();
