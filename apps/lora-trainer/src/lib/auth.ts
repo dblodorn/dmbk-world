@@ -1,11 +1,17 @@
 import { betterAuth } from "better-auth";
 import { siwe } from "better-auth/plugins/siwe";
-import Database from "better-sqlite3";
+import { LibsqlDialect } from "@libsql/kysely-libsql";
 import { verifyMessage } from "viem";
 import crypto from "node:crypto";
 
 export const auth = betterAuth({
-  database: new Database("auth.db"),
+  database: {
+    dialect: new LibsqlDialect({
+      url: process.env.TURSO_DATABASE_URL!,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    }),
+    type: "sqlite",
+  },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
   plugins: [
