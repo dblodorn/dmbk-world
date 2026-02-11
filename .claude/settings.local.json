@@ -31,7 +31,13 @@
       "Bash(pnpm --filter lora-trainer ls:*)",
       "Bash(pnpm --filter @dmbk-world/api build:*)",
       "Bash(npx @better-auth/cli migrate:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(npm view:*)",
+      "WebFetch(domain:dev.are.na)",
+      "Bash(grep:*)",
+      "Bash(git -C /Users/dainzora/dmbk/dmbk-world log --oneline -20)",
+      "Bash(git -C /Users/dainzora/dmbk/dmbk-world diff HEAD -- package.json)",
+      "Bash(pnpm --filter @dmbk-world/api test)"
     ],
     "deny": []
   }
