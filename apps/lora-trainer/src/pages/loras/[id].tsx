@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { View, Text, Button, Alert, Loader, Link, Image } from "reshaped";
+import { View, Text, Button, Alert, Loader, Image } from "reshaped";
 import NextLink from "next/link";
 import { trpc } from "@/utils/trpc";
 import GenerateModal from "@/components/GenerateModal";
@@ -13,11 +13,6 @@ function formatDate(iso: string): string {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function truncateAddress(address: string): string {
-  if (address.length <= 10) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 export default function LoraDetailPage() {
@@ -105,21 +100,6 @@ export default function LoraDetailPage() {
                   <Text variant="body-2" color="neutral-faded">
                     {formatDate(lora.createdAt)}
                   </Text>
-                  <Link
-                    href={`https://basescan.org/address/${lora.walletAddress}`}
-                    attributes={{
-                      target: "_blank",
-                      rel: "noopener noreferrer",
-                    }}
-                  >
-                    <Text
-                      variant="body-2"
-                      color="neutral-faded"
-                      attributes={{ style: { fontFamily: "monospace" } }}
-                    >
-                      {truncateAddress(lora.walletAddress)}
-                    </Text>
-                  </Link>
                 </View>
               </View>
             </View.Item>

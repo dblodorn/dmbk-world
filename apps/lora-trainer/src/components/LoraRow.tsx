@@ -6,17 +6,11 @@ interface LoraRowProps {
   id: string;
   triggerWord: string;
   loraWeightsUrl: string | null;
-  walletAddress: string;
   imageUrls: string[];
   steps: number;
   createdAt: string;
   arenaChannelUrl?: string | null;
   arenaChannelTitle?: string | null;
-}
-
-function truncateAddress(address: string): string {
-  if (address.length <= 10) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 function formatDate(iso: string): string {
@@ -32,7 +26,6 @@ export default function LoraRow({
   id,
   triggerWord,
   loraWeightsUrl,
-  walletAddress,
   imageUrls,
   steps,
   createdAt,
@@ -108,20 +101,6 @@ export default function LoraRow({
           )}
         </View>
       </View.Item>
-
-      {/* Wallet */}
-      <Link
-        href={`https://basescan.org/address/${walletAddress}`}
-        attributes={{ target: "_blank", rel: "noopener noreferrer" }}
-      >
-        <Text
-          variant="caption-1"
-          color="neutral-faded"
-          attributes={{ style: { fontFamily: "monospace" } }}
-        >
-          {truncateAddress(walletAddress)}
-        </Text>
-      </Link>
 
       {/* Actions */}
       <View direction="row" gap={2}>

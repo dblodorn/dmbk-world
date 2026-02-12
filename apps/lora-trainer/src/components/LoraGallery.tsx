@@ -47,7 +47,7 @@ export default function LoraGallery() {
           id={lora.id}
           triggerWord={lora.triggerWord}
           loraWeightsUrl={lora.loraWeightsUrl}
-          walletAddress={lora.walletAddress}
+
           imageUrls={lora.imageUrls}
           steps={lora.steps}
           createdAt={lora.createdAt}
