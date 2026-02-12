@@ -22,8 +22,21 @@ export interface LoraTrainingsTable {
   created_at: string;
 }
 
+export interface GeneratedImagesTable {
+  id: string;
+  lora_training_id: string;
+  wallet_address: string;
+  prompt: string;
+  image_url: string;
+  image_width: number | null;
+  image_height: number | null;
+  seed: string | null;
+  created_at: string;
+}
+
 interface Database {
   lora_trainings: LoraTrainingsTable;
+  generated_images: GeneratedImagesTable;
 }
 
 let _db: Kysely<Database> | null = null;
@@ -75,4 +88,28 @@ export async function ensureLoraTable(): Promise<void> {
     db,
   );
   _initialized = true;
+}
+
+let _genImagesInitialized = false;
+
+export async function ensureGeneratedImagesTable(): Promise<void> {
+  if (_genImagesInitialized) return;
+  const db = getDb();
+  await sql`
+    CREATE TABLE IF NOT EXISTS generated_images (
+      id TEXT PRIMARY KEY,
+      lora_training_id TEXT NOT NULL,
+      wallet_address TEXT NOT NULL,
+      prompt TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      image_width INTEGER,
+      image_height INTEGER,
+      seed TEXT,
+      created_at TEXT NOT NULL
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_gen_images_lora ON generated_images(lora_training_id)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_gen_images_wallet ON generated_images(wallet_address)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_gen_images_created ON generated_images(created_at)`.execute(db);
+  _genImagesInitialized = true;
 }

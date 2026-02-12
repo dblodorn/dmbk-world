@@ -16,7 +16,7 @@ import WalletStatus from "@/components/WalletStatus";
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
-  const isLoras = router.pathname === "/loras";
+  const isLoras = router.pathname.startsWith("/loras");
 
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>

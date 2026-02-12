@@ -19,13 +19,14 @@ export async function createPendingLora(params: {
   imageUrls: string[];
   arenaChannelUrl?: string;
   arenaChannelTitle?: string;
-}): Promise<void> {
+}): Promise<{ id: string }> {
   await ensureLoraTable();
   const db = getDb();
+  const id = generateId();
   await db
     .insertInto("lora_trainings")
     .values({
-      id: generateId(),
+      id,
       request_id: params.requestId,
       wallet_address: params.walletAddress,
       trigger_word: params.triggerWord,
@@ -38,6 +39,7 @@ export async function createPendingLora(params: {
       created_at: new Date().toISOString(),
     })
     .execute();
+  return { id };
 }
 
 export const loraRouter = router({
@@ -89,6 +91,52 @@ export const loraRouter = router({
         .execute();
 
       return { success: true };
+    }),
+
+  getById: publicProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .query(async ({ input }) => {
+      await ensureLoraTable();
+      const db = getDb();
+
+      const row = await db
+        .selectFrom("lora_trainings")
+        .select([
+          "id",
+          "request_id",
+          "wallet_address",
+          "trigger_word",
+          "steps",
+          "image_urls",
+          "lora_weights_url",
+          "arena_channel_url",
+          "arena_channel_title",
+          "status",
+          "created_at",
+        ])
+        .where("id", "=", input.id)
+        .executeTakeFirst();
+
+      if (!row) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "LoRA not found.",
+        });
+      }
+
+      return {
+        id: row.id,
+        requestId: row.request_id,
+        walletAddress: row.wallet_address,
+        triggerWord: row.trigger_word,
+        steps: row.steps,
+        imageUrls: JSON.parse(row.image_urls) as string[],
+        loraWeightsUrl: row.lora_weights_url,
+        arenaChannelUrl: row.arena_channel_url,
+        arenaChannelTitle: row.arena_channel_title,
+        status: row.status,
+        createdAt: row.created_at,
+      };
     }),
 
   list: publicProcedure.query(async () => {

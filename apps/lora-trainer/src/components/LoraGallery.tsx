@@ -44,6 +44,7 @@ export default function LoraGallery() {
       {data.map((lora) => (
         <LoraRow
           key={lora.id}
+          id={lora.id}
           triggerWord={lora.triggerWord}
           loraWeightsUrl={lora.loraWeightsUrl}
           walletAddress={lora.walletAddress}

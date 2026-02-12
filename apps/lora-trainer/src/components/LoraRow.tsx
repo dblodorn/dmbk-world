@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { View, Text, Button, Image, Link } from "reshaped";
+import NextLink from "next/link";
 
 interface LoraRowProps {
+  id: string;
   triggerWord: string;
   loraWeightsUrl: string | null;
   walletAddress: string;
@@ -27,6 +29,7 @@ function formatDate(iso: string): string {
 }
 
 export default function LoraRow({
+  id,
   triggerWord,
   loraWeightsUrl,
   walletAddress,
@@ -120,21 +123,28 @@ export default function LoraRow({
       </Link>
 
       {/* Actions */}
-      {loraWeightsUrl && (
-        <View direction="row" gap={2}>
-          <Button variant="ghost" size="small" onClick={handleCopy}>
-            {copied ? "Copied" : "Copy URL"}
+      <View direction="row" gap={2}>
+        <NextLink href={`/loras/${id}`} passHref legacyBehavior>
+          <Button as="a" color="primary" size="small">
+            View
           </Button>
-          <Link
-            href={loraWeightsUrl}
-            attributes={{ target: "_blank", rel: "noopener noreferrer" }}
-          >
-            <Button variant="ghost" size="small">
-              Download
+        </NextLink>
+        {loraWeightsUrl && (
+          <>
+            <Button variant="ghost" size="small" onClick={handleCopy}>
+              {copied ? "Copied" : "Copy URL"}
             </Button>
-          </Link>
-        </View>
-      )}
+            <Link
+              href={loraWeightsUrl}
+              attributes={{ target: "_blank", rel: "noopener noreferrer" }}
+            >
+              <Button variant="ghost" size="small">
+                Download
+              </Button>
+            </Link>
+          </>
+        )}
+      </View>
     </View>
   );
 }

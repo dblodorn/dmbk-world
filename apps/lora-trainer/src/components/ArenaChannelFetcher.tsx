@@ -27,6 +27,7 @@ export default function ArenaChannelFetcher() {
   const [trainingRequestId, setTrainingRequestId] = useState<string | null>(
     null,
   );
+  const [trainingLoraId, setTrainingLoraId] = useState<string | null>(null);
   const [trainingPhase, setTrainingPhase] = useState<TrainingPhase>("idle");
   const [trainingError, setTrainingError] = useState<string | null>(null);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
@@ -149,6 +150,7 @@ export default function ArenaChannelFetcher() {
   const trainLoraMutation = trpc.fal.trainLora.useMutation({
     onSuccess: (data) => {
       setTrainingRequestId(data.requestId);
+      setTrainingLoraId(data.loraId ?? null);
       setTrainingPhase("queued");
     },
     onError: (error) => {
@@ -247,6 +249,7 @@ export default function ArenaChannelFetcher() {
   const handleResetTraining = useCallback(() => {
     // Reset training state
     setTrainingRequestId(null);
+    setTrainingLoraId(null);
     setTrainingPhase("idle");
     setTrainingError(null);
     hasSavedRef.current = false;
@@ -369,6 +372,7 @@ export default function ArenaChannelFetcher() {
         result={trainingResult.data?.data ?? null}
         error={trainingError}
         queuePosition={trainingStatus.data?.queuePosition ?? undefined}
+        loraId={trainingLoraId}
         onReset={handleResetTraining}
         onCancel={handleCancelTraining}
         isCancelling={cancelTrainingMutation.isPending}
