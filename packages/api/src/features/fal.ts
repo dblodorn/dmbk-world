@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../trpc";
-import { requireFalApiKey, getTrainingPriceUsd } from "../env";
+import { requireFalApiKey, getTrainingPriceUsd, getAdminWallet } from "../env";
 import { fal } from "@fal-ai/client";
 import JSZip from "jszip";
 import dns from "node:dns";
@@ -307,7 +307,11 @@ export const falRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const walletAddress = ctx.session.user.walletAddress;
+      console.log(
+        `[trainLora] walletAddress from ctx: "${walletAddress}", adminWallet from env: "${getAdminWallet()}"`,
+      );
       const exempt = isPaymentExempt(walletAddress);
+      console.log(`[trainLora] isPaymentExempt: ${exempt}`);
 
       // ── Payment verification ──────────────────────────────────────
       let paymentValue: bigint | null = null;

@@ -5,6 +5,8 @@ import {
   http,
   parseEther,
   formatUnits,
+  isAddress,
+  isAddressEqual,
   type Hex,
 } from "viem";
 import { base } from "viem/chains";
@@ -209,16 +211,18 @@ export async function sendRefund(
  * Check if a wallet address is exempt from payment (admin or QA).
  */
 export function isPaymentExempt(walletAddress: string): boolean {
-  const addr = walletAddress.toLowerCase();
+  if (!walletAddress || !isAddress(walletAddress)) return false;
 
   // Check admin wallet
   const adminWallet = getAdminWallet();
-  if (adminWallet && addr === adminWallet.toLowerCase()) {
-    return true;
+  if (adminWallet && isAddress(adminWallet)) {
+    if (isAddressEqual(walletAddress, adminWallet)) return true;
   }
 
   // Check QA wallets
-  return QA_WALLETS.some((qa) => qa.toLowerCase() === addr);
+  return QA_WALLETS.some(
+    (qa) => isAddress(qa) && isAddressEqual(walletAddress, qa),
+  );
 }
 
 // ─── tRPC Router ─────────────────────────────────────────────────────────────
