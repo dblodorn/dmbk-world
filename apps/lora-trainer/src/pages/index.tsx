@@ -1,35 +1,12 @@
-import { View, Text, Button } from "reshaped";
-import NextLink from "next/link";
+import { View } from "reshaped";
 import ArenaChannelFetcher from "@/components/ArenaChannelFetcher";
-import WalletStatus from "@/components/WalletStatus";
 
 export default function Home() {
   return (
     <View height="100vh" overflow="hidden" direction="column">
-      <View
-        direction="row"
-        align="center"
-        gap={4}
-        padding={4}
-        borderColor="neutral-faded"
-        attributes={{ style: { borderBottomWidth: 1, borderBottomStyle: "solid" } }}
-      >
-        <View.Item grow>
-          <Text variant="title-3" weight="bold">
-            LoRA Trainer
-          </Text>
-        </View.Item>
-        <NextLink href="/loras" passHref legacyBehavior>
-          <Button as="a" variant="ghost" size="small">
-            Gallery
-          </Button>
-        </NextLink>
-      </View>
-
       <View attributes={{ style: { flex: 1, overflow: "hidden" } }}>
         <ArenaChannelFetcher />
       </View>
-      <WalletStatus />
     </View>
   );
 }
