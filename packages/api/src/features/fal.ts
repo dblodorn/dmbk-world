@@ -299,6 +299,8 @@ export const falRouter = router({
           .max(20),
         triggerWord: z.string().min(1).max(50),
         steps: z.number().min(100).max(2000).default(1000),
+        arenaChannelUrl: z.string().url().optional(),
+        arenaChannelTitle: z.string().max(200).optional(),
         paymentTxHash: z
           .string()
           .regex(/^0x[0-9a-fA-F]{64}$/)
@@ -401,6 +403,8 @@ export const falRouter = router({
             triggerWord: input.triggerWord,
             steps: input.steps,
             imageUrls: input.imageUrls,
+            arenaChannelUrl: input.arenaChannelUrl,
+            arenaChannelTitle: input.arenaChannelTitle,
           });
           console.log(`Pending lora record created for ${request_id}`);
         } catch (dbError) {
