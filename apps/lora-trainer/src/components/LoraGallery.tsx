@@ -26,7 +26,7 @@ export default function LoraGallery() {
 
   if (!data || data.length === 0) {
     return (
-      <View align="center" justify="center" padding={10} gap={4}>
+      <View align="center" justify="center" padding={10} gap={2}>
         <Text variant="body-1" color="neutral-faded">
           No LoRAs trained yet.
         </Text>

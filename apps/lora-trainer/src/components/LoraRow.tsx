@@ -59,6 +59,7 @@ export default function LoraRow({
       padding={4}
       borderRadius="medium"
       borderColor="neutral-faded"
+      backgroundColor="elevation-base"
     >
       {/* Thumbnails */}
       <View direction="row" gap={1} align="center">
