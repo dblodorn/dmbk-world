@@ -9,6 +9,7 @@ interface TrainingProgressProps {
   result: Record<string, unknown> | null;
   error: string | null;
   queuePosition?: number;
+  loraId?: string | null;
   onReset: () => void;
   onCancel: () => void;
   isCancelling: boolean;
@@ -53,6 +54,7 @@ export default function TrainingProgress({
   result,
   error,
   queuePosition,
+  loraId,
   onReset,
   onCancel,
   isCancelling,
@@ -234,6 +236,13 @@ export default function TrainingProgress({
                         >
                           Copy URL
                         </Button>
+                        {loraId && (
+                          <NextLink href={`/loras/${loraId}`} passHref legacyBehavior>
+                            <Button as="a" color="positive" size="small">
+                              Generate Images
+                            </Button>
+                          </NextLink>
+                        )}
                         <NextLink href="/loras" passHref legacyBehavior>
                           <Button as="a" color="neutral" size="small">
                             View in Gallery

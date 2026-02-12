@@ -396,8 +396,9 @@ export const falRouter = router({
         console.log(`Training submitted to queue: ${request_id}`);
 
         // Persist a pending record so the training is not lost if the client disconnects
+        let loraId: string | null = null;
         try {
-          await createPendingLora({
+          const result = await createPendingLora({
             requestId: request_id,
             walletAddress,
             triggerWord: input.triggerWord,
@@ -406,7 +407,8 @@ export const falRouter = router({
             arenaChannelUrl: input.arenaChannelUrl,
             arenaChannelTitle: input.arenaChannelTitle,
           });
-          console.log(`Pending lora record created for ${request_id}`);
+          loraId = result.id;
+          console.log(`Pending lora record created for ${request_id} (id: ${loraId})`);
         } catch (dbError) {
           // Log but don't fail the training — the client can still complete it
           console.error("Failed to create pending lora record:", dbError);
@@ -415,6 +417,7 @@ export const falRouter = router({
         return {
           requestId: request_id,
           zipUrl,
+          loraId,
           refundTxHash: null as string | null,
         };
       } catch (error) {
