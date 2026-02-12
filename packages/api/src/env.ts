@@ -17,6 +17,8 @@ const envSchema = z.object({
   TRAINING_PRICE_USD: z.string().optional(),
   ADMIN_WALLET: z.string().optional(),
   PAYMENT_WALLET_PRIVATE_KEY: z.string().optional(),
+  PAYMENT_RECIPIENT: z.string().optional(),
+  QA_WALLETS: z.string().optional(),
 });
 
 // Parse environment variables (will not throw since all keys are optional)
@@ -29,6 +31,8 @@ export const env = envResult.success
       TRAINING_PRICE_USD: undefined,
       ADMIN_WALLET: undefined,
       PAYMENT_WALLET_PRIVATE_KEY: undefined,
+      PAYMENT_RECIPIENT: undefined,
+      QA_WALLETS: undefined,
     };
 
 /**
@@ -73,4 +77,31 @@ export function requirePaymentWalletKey(): string {
     );
   }
   return key;
+}
+
+/**
+ * Get the payment recipient wallet address on BASE.
+ * Required for payment verification and transaction routing.
+ */
+export function getPaymentRecipient(): string {
+  const addr = env.PAYMENT_RECIPIENT;
+  if (!addr) {
+    throw new Error(
+      "PAYMENT_RECIPIENT is not configured. Set it in .env to enable payments.",
+    );
+  }
+  return addr;
+}
+
+/**
+ * Get the list of QA wallet addresses that bypass the payment gate.
+ * Returns an empty array if not configured.
+ */
+export function getQaWallets(): string[] {
+  const raw = env.QA_WALLETS;
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }

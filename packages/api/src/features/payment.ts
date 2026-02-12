@@ -16,18 +16,11 @@ import {
   getTrainingPriceUsd,
   getAdminWallet,
   requirePaymentWalletKey,
+  getPaymentRecipient,
+  getQaWallets,
 } from "../env";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-
-/** Payment recipient wallet on BASE Mainnet */
-export const PAYMENT_RECIPIENT =
-  "0xAc820091d611C2400d710E72F4b0c94051b24459" as const;
-
-/** QA wallets that bypass the payment gate */
-export const QA_WALLETS = [
-  "0xC2ea7d6B9766e592Eceb5e02BAA35A1272441f80",
-] as const;
 
 /** Uniswap V3 QuoterV2 on BASE */
 const UNISWAP_QUOTER_V2 =
@@ -159,9 +152,10 @@ export async function verifyPaymentTx(
   }
 
   // Verify recipient
-  if (tx.to?.toLowerCase() !== PAYMENT_RECIPIENT.toLowerCase()) {
+  const paymentRecipient = getPaymentRecipient();
+  if (tx.to?.toLowerCase() !== paymentRecipient.toLowerCase()) {
     throw new Error(
-      `Transaction recipient mismatch. Expected ${PAYMENT_RECIPIENT}, got ${tx.to}`,
+      `Transaction recipient mismatch. Expected ${paymentRecipient}, got ${tx.to}`,
     );
   }
 
@@ -220,7 +214,8 @@ export function isPaymentExempt(walletAddress: string): boolean {
   }
 
   // Check QA wallets
-  return QA_WALLETS.some(
+  const qaWallets = getQaWallets();
+  return qaWallets.some(
     (qa) => isAddress(qa) && isAddressEqual(walletAddress, qa),
   );
 }
@@ -244,9 +239,9 @@ export const paymentRouter = router({
       trainingPriceUsd,
       ethPriceUsd,
       requiredEthWei: requiredEthWei.toString(), // bigint → string for JSON
-      paymentRecipient: PAYMENT_RECIPIENT,
+      paymentRecipient: getPaymentRecipient(),
       adminWallet: getAdminWallet() ?? null,
-      qaWallets: QA_WALLETS as unknown as string[],
+      qaWallets: getQaWallets(),
     };
   }),
 
