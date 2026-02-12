@@ -1,11 +1,12 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { View, Alert } from "reshaped";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAccount } from "wagmi";
+import { isAddressEqual, type Address } from "viem";
 import { trpc } from "@/utils/trpc";
 import { downloadBase64File } from "@/utils/downloadBase64File";
-import { authClient } from "@/lib/auth-client";
-import { QA_WALLETS } from "@/lib/constants";
+import { ADMIN_WALLET, QA_WALLETS } from "@/lib/constants";
 import ChannelUrlForm from "./ChannelUrlForm";
 import ArenaChannelResults from "./ArenaChannelResults";
 import Sidebar from "./Sidebar";
@@ -30,26 +31,32 @@ export default function ArenaChannelFetcher() {
   const [trainingError, setTrainingError] = useState<string | null>(null);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
 
-  // Session + payment config for privilege checks
-  const { data: session } = authClient.useSession();
-  const ethPriceQuery = trpc.payment.getEthPrice.useQuery(undefined, {
-    enabled: !!session,
-  });
+  // Connected wallet for privilege checks
+  const { address: connectedAddress } = useAccount();
 
   // Determine if current wallet is exempt from payment
   const isExempt = useMemo(() => {
-    if (!session) return false;
-    const walletAddress = (session.user as Record<string, unknown>).walletAddress as string | undefined;
-    if (!walletAddress) return false;
-    const addr = walletAddress.toLowerCase();
+    if (!connectedAddress) return false;
 
-    // Check admin wallet
-    if (ethPriceQuery.data?.adminWallet && addr === ethPriceQuery.data.adminWallet.toLowerCase()) {
-      return true;
+    // Check admin wallet (from public env var, no API dependency)
+    if (ADMIN_WALLET) {
+      try {
+        if (isAddressEqual(connectedAddress, ADMIN_WALLET as Address)) {
+          return true;
+        }
+      } catch {
+        // invalid address format — skip
+      }
     }
     // Check QA wallets
-    return QA_WALLETS.some((qa) => qa.toLowerCase() === addr);
-  }, [session, ethPriceQuery.data]);
+    return QA_WALLETS.some((qa) => {
+      try {
+        return isAddressEqual(connectedAddress, qa as Address);
+      } catch {
+        return false;
+      }
+    });
+  }, [connectedAddress]);
 
   const { handleSubmit, control, setValue, getValues } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -109,6 +116,34 @@ export default function ArenaChannelFetcher() {
     { requestId: trainingRequestId! },
     { enabled: trainingPhase === "completed" && !!trainingRequestId },
   );
+
+  // --- Auto-save completed LoRA to gallery ---
+  const hasSavedRef = useRef(false);
+  const completeLoraM = trpc.lora.complete.useMutation();
+
+  useEffect(() => {
+    if (
+      trainingPhase === "completed" &&
+      trainingResult.data?.data &&
+      trainingRequestId &&
+      !hasSavedRef.current
+    ) {
+      const loraFile = trainingResult.data.data.diffusers_lora_file as
+        | { url?: string }
+        | undefined;
+      const configFile = trainingResult.data.data.config_file as
+        | { url?: string }
+        | undefined;
+      const loraUrl = loraFile?.url ?? configFile?.url;
+      if (loraUrl) {
+        hasSavedRef.current = true;
+        completeLoraM.mutate({
+          requestId: trainingRequestId,
+          loraWeightsUrl: loraUrl,
+        });
+      }
+    }
+  }, [trainingPhase, trainingResult.data, trainingRequestId]);
 
   // --- Mutations ---
   const trainLoraMutation = trpc.fal.trainLora.useMutation({
@@ -212,6 +247,7 @@ export default function ArenaChannelFetcher() {
     setTrainingRequestId(null);
     setTrainingPhase("idle");
     setTrainingError(null);
+    hasSavedRef.current = false;
     // Reset arena / form state
     setSubmittedUrl("");
     setValue("url", "");

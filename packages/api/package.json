@@ -18,10 +18,12 @@
   },
   "dependencies": {
     "@fal-ai/client": "^1.2.0",
+    "@libsql/kysely-libsql": "^0.4.1",
     "@trpc/server": "^11.4.3",
     "are.na": "^0.1.5",
     "dotenv": "^16.4.5",
     "jszip": "^3.10.1",
+    "kysely": "^0.28.11",
     "viem": "^2.45.2",
     "zod": "^3.22.4"
   },
