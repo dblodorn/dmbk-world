@@ -296,6 +296,28 @@ export default function ImageSlideshow() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasReady, setCanvasReady] = useState(false);
+  const [svgContent, setSvgContent] = useState<string>("");
+
+  // Load trainer.svg as inline SVG
+  useEffect(() => {
+    fetch("/trainer.svg")
+      .then((res) => res.text())
+      .then((text) => {
+        // Extract the <svg> element, strip XML declaration / DOCTYPE
+        const svgMatch = text.match(/<svg[\s\S]*<\/svg>/);
+        if (svgMatch) {
+          // Make it responsive and recolor
+          let svg = svgMatch[0];
+          svg = svg.replace(/width="[^"]*"/, 'width="65vw"');
+          svg = svg.replace(/height="[^"]*"/, 'height="auto"');
+          // Ensure the SVG itself is a block element for proper flex centering
+          svg = svg.replace("<svg ", '<svg style="display:block" ');
+          svg = svg.replace(/fill="#000000"/, 'fill="#00d973"');
+          setSvgContent(svg);
+        }
+      })
+      .catch((err) => console.error("Failed to load trainer.svg", err));
+  }, []);
 
   // Image URL queue
   const queueRef = useRef<string[]>([]);
@@ -699,6 +721,19 @@ export default function ImageSlideshow() {
           opacity: canvasReady ? 1 : 0,
         }}
       />
+      {svgContent && (
+        <div
+          dangerouslySetInnerHTML={{ __html: svgContent }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        />
+      )}
     </div>
   );
 }
