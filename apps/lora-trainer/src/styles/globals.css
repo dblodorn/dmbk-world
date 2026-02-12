@@ -1,3 +1,11 @@
+:root,
+[data-rs-theme~="lora-trainer"] {
+  --color-accent: #D9A528;
+  --color-accent-rgb: 217, 165, 40;
+  --color-accent-light: #E8BE5A;
+  --color-accent-dark: #A07A10;
+}
+
 @font-face {
   font-family: "FFF Forward";
   src: url("/fonts/fff-Regular_gdi.woff") format("woff");

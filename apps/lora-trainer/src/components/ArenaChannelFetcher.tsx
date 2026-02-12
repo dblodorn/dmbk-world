@@ -12,6 +12,7 @@ import ArenaChannelResults from "./ArenaChannelResults";
 import Sidebar from "./Sidebar";
 import TrainingProgress from "./TrainingProgress";
 import PaymentGate from "./PaymentGate";
+import ImageSlideshow from "./ImageSlideshow";
 import { formSchema, type FormData } from "./types";
 
 export type TrainingPhase =
@@ -317,6 +318,16 @@ export default function ArenaChannelFetcher() {
 
         {error && (
           <Alert color="critical">Error: {error.message}</Alert>
+        )}
+
+        {!data && !isLoading && !error && (
+          <View
+            attributes={{
+              style: { flex: "1 1 0%", minHeight: 0, overflow: "hidden" },
+            }}
+          >
+            <ImageSlideshow />
+          </View>
         )}
 
         {data && (

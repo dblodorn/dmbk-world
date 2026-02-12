@@ -43,7 +43,8 @@
       "mcp__plugin_compound-engineering_context7__resolve-library-id",
       "mcp__plugin_compound-engineering_context7__query-docs",
       "Bash(bash:*)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(git log:*)"
     ],
     "deny": []
   }

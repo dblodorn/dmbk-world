@@ -4,6 +4,7 @@ import { arenaRouter } from "./features/arena";
 import { paymentRouter } from "./features/payment";
 import { loraRouter } from "./features/lora";
 import { generateRouter } from "./features/generate";
+import { slideshowRouter } from "./features/slideshow";
 
 export const appRouter = router({
   fal: falRouter,
@@ -11,6 +12,7 @@ export const appRouter = router({
   payment: paymentRouter,
   lora: loraRouter,
   generate: generateRouter,
+  slideshow: slideshowRouter,
 });
 
 export type AppRouter = typeof appRouter;
