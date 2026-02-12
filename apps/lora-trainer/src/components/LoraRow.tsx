@@ -8,6 +8,8 @@ interface LoraRowProps {
   imageUrls: string[];
   steps: number;
   createdAt: string;
+  arenaChannelUrl?: string | null;
+  arenaChannelTitle?: string | null;
 }
 
 function truncateAddress(address: string): string {
@@ -31,6 +33,8 @@ export default function LoraRow({
   imageUrls,
   steps,
   createdAt,
+  arenaChannelUrl,
+  arenaChannelTitle,
 }: LoraRowProps) {
   const [copied, setCopied] = useState(false);
   const maxThumbnails = 4;
@@ -88,6 +92,16 @@ export default function LoraRow({
           <Text variant="caption-1" color="neutral-faded">
             {formatDate(createdAt)}
           </Text>
+          {arenaChannelUrl && (
+            <Link
+              href={arenaChannelUrl}
+              attributes={{ target: "_blank", rel: "noopener noreferrer" }}
+            >
+              <Text variant="caption-1" color="neutral-faded">
+                {arenaChannelTitle || "Are.na channel"}
+              </Text>
+            </Link>
+          )}
         </View>
       </View.Item>
 

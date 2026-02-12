@@ -227,11 +227,13 @@ export default function ArenaChannelFetcher() {
         triggerWord: formData.triggerWord,
         steps: formData.trainingSteps,
         ...(paymentTxHash ? { paymentTxHash } : {}),
+        ...(submittedUrl ? { arenaChannelUrl: submittedUrl } : {}),
+        ...(data?.channel.title ? { arenaChannelTitle: data.channel.title } : {}),
       });
     } catch {
       // error handled in onError callback
     }
-  }, [getValues, isExempt, trainLoraMutation]);
+  }, [getValues, isExempt, trainLoraMutation, submittedUrl, data]);
 
   const handlePaymentComplete = useCallback(
     (txHash: string) => {

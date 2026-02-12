@@ -16,6 +16,8 @@ export interface LoraTrainingsTable {
   steps: number;
   image_urls: string; // JSON-encoded string[]
   lora_weights_url: string | null;
+  arena_channel_url: string | null;
+  arena_channel_title: string | null;
   status: "pending" | "completed" | "failed";
   created_at: string;
 }
@@ -57,10 +59,15 @@ export async function ensureLoraTable(): Promise<void> {
       steps INTEGER NOT NULL,
       image_urls TEXT NOT NULL,
       lora_weights_url TEXT,
+      arena_channel_url TEXT,
+      arena_channel_title TEXT,
       status TEXT NOT NULL DEFAULT 'pending',
       created_at TEXT NOT NULL
     )
   `.execute(db);
+  // Add columns for existing tables (no-op if they already exist)
+  await sql`ALTER TABLE lora_trainings ADD COLUMN arena_channel_url TEXT`.execute(db).catch(() => {});
+  await sql`ALTER TABLE lora_trainings ADD COLUMN arena_channel_title TEXT`.execute(db).catch(() => {});
   await sql`CREATE INDEX IF NOT EXISTS idx_lora_trainings_created_at ON lora_trainings(created_at)`.execute(
     db,
   );

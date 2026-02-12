@@ -50,6 +50,8 @@ export default function LoraGallery() {
           imageUrls={lora.imageUrls}
           steps={lora.steps}
           createdAt={lora.createdAt}
+          arenaChannelUrl={lora.arenaChannelUrl}
+          arenaChannelTitle={lora.arenaChannelTitle}
         />
       ))}
     </View>

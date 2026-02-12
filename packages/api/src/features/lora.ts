@@ -17,6 +17,8 @@ export async function createPendingLora(params: {
   triggerWord: string;
   steps: number;
   imageUrls: string[];
+  arenaChannelUrl?: string;
+  arenaChannelTitle?: string;
 }): Promise<void> {
   await ensureLoraTable();
   const db = getDb();
@@ -30,6 +32,8 @@ export async function createPendingLora(params: {
       steps: params.steps,
       image_urls: JSON.stringify(params.imageUrls),
       lora_weights_url: null,
+      arena_channel_url: params.arenaChannelUrl ?? null,
+      arena_channel_title: params.arenaChannelTitle ?? null,
       status: "pending",
       created_at: new Date().toISOString(),
     })
@@ -101,6 +105,8 @@ export const loraRouter = router({
         "steps",
         "image_urls",
         "lora_weights_url",
+        "arena_channel_url",
+        "arena_channel_title",
         "created_at",
       ])
       .where("status", "=", "completed")
@@ -115,6 +121,8 @@ export const loraRouter = router({
       steps: row.steps,
       imageUrls: JSON.parse(row.image_urls) as string[],
       loraWeightsUrl: row.lora_weights_url,
+      arenaChannelUrl: row.arena_channel_url,
+      arenaChannelTitle: row.arena_channel_title,
       createdAt: row.created_at,
     }));
   }),
