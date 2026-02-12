@@ -120,3 +120,4 @@ Thumbs.db
 *.tar
 *.zip
 .env*.local
+.worktrees

@@ -39,7 +39,11 @@
       "Bash(git -C /Users/dainzora/dmbk/dmbk-world diff HEAD -- package.json)",
       "Bash(pnpm --filter @dmbk-world/api test)",
       "Bash(git -C /Users/dainzora/dmbk/dmbk-world-ssrf-fix push -u origin fix/ssrf-protection)",
-      "Bash(pnpm lint:*)"
+      "Bash(pnpm lint:*)",
+      "mcp__plugin_compound-engineering_context7__resolve-library-id",
+      "mcp__plugin_compound-engineering_context7__query-docs",
+      "Bash(bash:*)",
+      "Bash(git status:*)"
     ],
     "deny": []
   }
