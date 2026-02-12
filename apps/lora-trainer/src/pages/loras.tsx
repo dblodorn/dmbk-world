@@ -1,11 +1,11 @@
 import { View, Text, Button } from "reshaped";
 import NextLink from "next/link";
-import ArenaChannelFetcher from "@/components/ArenaChannelFetcher";
+import LoraGallery from "@/components/LoraGallery";
 import WalletStatus from "@/components/WalletStatus";
 
-export default function Home() {
+export default function LorasPage() {
   return (
-    <View height="100vh" overflow="hidden" direction="column">
+    <View height="100vh" direction="column">
       <View
         direction="row"
         align="center"
@@ -16,19 +16,20 @@ export default function Home() {
       >
         <View.Item grow>
           <Text variant="title-3" weight="bold">
-            LoRA Trainer
+            LoRA Gallery
           </Text>
         </View.Item>
-        <NextLink href="/loras" passHref legacyBehavior>
+        <NextLink href="/" passHref legacyBehavior>
           <Button as="a" variant="ghost" size="small">
-            Gallery
+            Train
           </Button>
         </NextLink>
       </View>
 
-      <View attributes={{ style: { flex: 1, overflow: "hidden" } }}>
-        <ArenaChannelFetcher />
+      <View padding={4} attributes={{ style: { flex: 1, overflowY: "auto" } }}>
+        <LoraGallery />
       </View>
+
       <WalletStatus />
     </View>
   );

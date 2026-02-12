@@ -14,6 +14,7 @@ import {
   calculateRequiredEthWei,
   sendRefund,
 } from "./payment";
+import { createPendingLora } from "./lora";
 
 // Configure fal client lazily — credentials are validated per-request
 function ensureFalConfigured() {
@@ -387,6 +388,21 @@ export const falRouter = router({
         );
 
         console.log(`Training submitted to queue: ${request_id}`);
+
+        // Persist a pending record so the training is not lost if the client disconnects
+        try {
+          await createPendingLora({
+            requestId: request_id,
+            walletAddress,
+            triggerWord: input.triggerWord,
+            steps: input.steps,
+            imageUrls: input.imageUrls,
+          });
+          console.log(`Pending lora record created for ${request_id}`);
+        } catch (dbError) {
+          // Log but don't fail the training — the client can still complete it
+          console.error("Failed to create pending lora record:", dbError);
+        }
 
         return {
           requestId: request_id,

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { View, Text, Card, Alert, Button, Loader } from "reshaped";
+import NextLink from "next/link";
 import type { TrainingPhase } from "./ArenaChannelFetcher";
 
 interface TrainingProgressProps {
@@ -233,6 +234,11 @@ export default function TrainingProgress({
                         >
                           Copy URL
                         </Button>
+                        <NextLink href="/loras" passHref legacyBehavior>
+                          <Button as="a" color="neutral" size="small">
+                            View in Gallery
+                          </Button>
+                        </NextLink>
                         <Button
                           color="neutral"
                           size="small"

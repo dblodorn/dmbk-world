@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { View, Alert } from "reshaped";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -110,6 +110,34 @@ export default function ArenaChannelFetcher() {
     { enabled: trainingPhase === "completed" && !!trainingRequestId },
   );
 
+  // --- Auto-save completed LoRA to gallery ---
+  const hasSavedRef = useRef(false);
+  const completeLoraM = trpc.lora.complete.useMutation();
+
+  useEffect(() => {
+    if (
+      trainingPhase === "completed" &&
+      trainingResult.data?.data &&
+      trainingRequestId &&
+      !hasSavedRef.current
+    ) {
+      const loraFile = trainingResult.data.data.diffusers_lora_file as
+        | { url?: string }
+        | undefined;
+      const configFile = trainingResult.data.data.config_file as
+        | { url?: string }
+        | undefined;
+      const loraUrl = loraFile?.url ?? configFile?.url;
+      if (loraUrl) {
+        hasSavedRef.current = true;
+        completeLoraM.mutate({
+          requestId: trainingRequestId,
+          loraWeightsUrl: loraUrl,
+        });
+      }
+    }
+  }, [trainingPhase, trainingResult.data, trainingRequestId]);
+
   // --- Mutations ---
   const trainLoraMutation = trpc.fal.trainLora.useMutation({
     onSuccess: (data) => {
@@ -212,6 +240,7 @@ export default function ArenaChannelFetcher() {
     setTrainingRequestId(null);
     setTrainingPhase("idle");
     setTrainingError(null);
+    hasSavedRef.current = false;
     // Reset arena / form state
     setSubmittedUrl("");
     setValue("url", "");
