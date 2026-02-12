@@ -1,4 +1,4 @@
-const { generateThemeColors } = require("reshaped/themes");
+import { generateThemeColors } from "reshaped/themes";
 
 const config = {
   themes: {
