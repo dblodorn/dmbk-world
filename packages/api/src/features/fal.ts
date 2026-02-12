@@ -3,7 +3,8 @@ import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../trpc";
 import { requireFalApiKey, getTrainingPriceUsd, getAdminWallet } from "../env";
 import { fal } from "@fal-ai/client";
-import JSZip from "jszip";
+import archiver from "archiver";
+import { PassThrough } from "node:stream";
 import dns from "node:dns";
 import net from "node:net";
 import type { Hex } from "viem";
@@ -106,10 +107,15 @@ export async function validateImageUrl(url: string): Promise<void> {
   }
 }
 
-// Helper function to download image from URL
-async function downloadImage(
-  url: string,
-): Promise<{ filename: string; data: Buffer }> {
+// --- Resource Limits ---
+export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+export const DOWNLOAD_TIMEOUT_MS = 30_000; // 30 seconds
+export const DOWNLOAD_CONCURRENCY = 5;
+
+type DownloadResult = { filename: string; data: Buffer };
+
+// Helper function to download image from URL with streaming size enforcement
+export async function downloadImage(url: string): Promise<DownloadResult> {
   // Validate URL safety BEFORE making any network request
   await validateImageUrl(url);
 
@@ -118,6 +124,7 @@ async function downloadImage(
 
     const response = await fetch(url, {
       redirect: "error", // Reject redirects — prevents redirect-based SSRF bypasses
+      signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
     });
 
     console.log(`Response status: ${response.status} ${response.statusText}`);
@@ -135,8 +142,33 @@ async function downloadImage(
       );
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    // Early reject via Content-Length (optimization — headers can lie)
+    const contentLength = Number(response.headers.get("content-length"));
+    if (contentLength > MAX_IMAGE_SIZE) {
+      throw new Error(
+        `Image exceeds ${MAX_IMAGE_SIZE} byte limit (Content-Length: ${contentLength})`,
+      );
+    }
+
+    // Streaming size enforcement (authoritative — Content-Length can lie)
+    const reader = response.body!.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_IMAGE_SIZE) {
+        reader.cancel();
+        throw new Error(
+          `Image exceeds ${MAX_IMAGE_SIZE} byte limit (streamed ${totalBytes} bytes)`,
+        );
+      }
+      chunks.push(value);
+    }
+
+    const buffer = Buffer.concat(chunks);
 
     console.log(`Downloaded ${buffer.length} bytes`);
 
@@ -166,25 +198,49 @@ async function downloadImage(
   }
 }
 
-// Helper function to create zip file from image URLs
-async function createImageZip(imageUrls: string[]): Promise<Buffer> {
-  const zip = new JSZip();
+// Download images with limited concurrency using a worker pool pattern
+export async function downloadWithConcurrency(
+  urls: string[],
+  concurrency: number,
+): Promise<(DownloadResult | null)[]> {
+  const results: (DownloadResult | null)[] = new Array(urls.length).fill(null);
+  let nextIndex = 0;
 
+  async function worker() {
+    while (nextIndex < urls.length) {
+      const index = nextIndex++;
+      try {
+        results[index] = await downloadImage(urls[index]);
+      } catch (error) {
+        console.error(
+          `Failed to download image ${index + 1}/${urls.length}: ${error}`,
+        );
+        results[index] = null;
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, urls.length) }, () => worker()),
+  );
+  return results;
+}
+
+// Helper function to create zip file from image URLs
+// Returns { buffer, imageCount } so callers know how many images succeeded
+export async function createImageZip(
+  imageUrls: string[],
+): Promise<{ buffer: Buffer; imageCount: number }> {
   console.log(`Starting to create zip from ${imageUrls.length} image URLs`);
 
-  // Download all images in parallel
-  const downloadPromises = imageUrls.map((url, index) =>
-    downloadImage(url).catch((error) => {
-      console.error(
-        `Failed to download image ${index + 1} from URL ${url}:`,
-        error,
-      );
-      return null; // Return null for failed downloads
-    }),
+  // Download with concurrency limit
+  const downloadResults = await downloadWithConcurrency(
+    imageUrls,
+    DOWNLOAD_CONCURRENCY,
   );
-
-  const downloadResults = await Promise.all(downloadPromises);
-  const validImages = downloadResults.filter((result) => result !== null);
+  const validImages = downloadResults.filter(
+    (result): result is DownloadResult => result !== null,
+  );
 
   console.log(
     `Successfully downloaded ${validImages.length} out of ${imageUrls.length} images`,
@@ -194,40 +250,28 @@ async function createImageZip(imageUrls: string[]): Promise<Buffer> {
     throw new Error("Failed to download any images");
   }
 
-  // Add valid images to zip
-  validImages.forEach((image, index) => {
-    // Ensure unique filenames in case of duplicates
-    const uniqueFilename = `${index + 1}_${image!.filename}`;
+  // Create archive — use 'store' since images are already compressed
+  const archive = archiver("zip", { store: true });
+  const chunks: Buffer[] = [];
+
+  const output = new PassThrough();
+  output.on("data", (chunk: Buffer) => chunks.push(chunk));
+  archive.pipe(output);
+
+  for (const [index, image] of validImages.entries()) {
+    const uniqueFilename = `${index + 1}_${image.filename}`;
     console.log(
-      `Adding image ${uniqueFilename} to zip (${image!.data.length} bytes)`,
+      `Adding image ${uniqueFilename} to zip (${image.data.length} bytes)`,
     );
-    zip.file(uniqueFilename, image!.data);
-  });
-
-  // Generate zip buffer
-  console.log("Generating zip buffer...");
-  const zipBuffer = await zip.generateAsync({
-    type: "nodebuffer",
-    compression: "DEFLATE",
-    compressionOptions: { level: 6 },
-  });
-
-  console.log(`Zip buffer generated: ${zipBuffer.length} bytes`);
-
-  // Verify the zip is valid by re-loading it
-  const testZip = new JSZip();
-  const loadedZip = await testZip.loadAsync(zipBuffer);
-  const fileNames = Object.keys(loadedZip.files);
-  console.log(
-    `Zip contents verification (${fileNames.length} files):`,
-    fileNames,
-  );
-
-  if (fileNames.length === 0) {
-    throw new Error("Zip archive was generated but contains no files");
+    archive.append(image.data, { name: uniqueFilename });
   }
 
-  return zipBuffer;
+  await archive.finalize();
+
+  const zipBuffer = Buffer.concat(chunks);
+  console.log(`Zip buffer generated: ${zipBuffer.length} bytes`);
+
+  return { buffer: zipBuffer, imageCount: validImages.length };
 }
 
 export const falRouter = router({
@@ -255,7 +299,9 @@ export const falRouter = router({
         );
 
         // Create zip file from images
-        const zipBuffer = await createImageZip(input.imageUrls);
+        const { buffer: zipBuffer, imageCount } = await createImageZip(
+          input.imageUrls,
+        );
 
         console.log(`Zip file created (${zipBuffer.length} bytes)`);
 
@@ -267,11 +313,10 @@ export const falRouter = router({
         const filename = `lora-training-${input.triggerWord}-${timestamp}.zip`;
 
         return {
-          success: true,
           filename,
           data: base64Zip,
           size: zipBuffer.length,
-          imageCount: input.imageUrls.length,
+          imageCount,
         };
       } catch (error) {
         console.error("Zip download error:", error);
@@ -367,7 +412,7 @@ export const falRouter = router({
         );
 
         // Create zip file from images
-        const zipBuffer = await createImageZip(input.imageUrls);
+        const { buffer: zipBuffer } = await createImageZip(input.imageUrls);
 
         console.log(
           `Zip file created (${zipBuffer.length} bytes), uploading to FAL storage...`,
