@@ -25,7 +25,7 @@ const config = {
       }),
       fontFamily: {
         body: { family: "FFF Forward, Arial, Helvetica, sans-serif" },
-        title: { family: "FFF Forward, Arial, Helvetica, sans-serif" },
+        title: { family: "Graphik, FFF Forward, Arial, Helvetica, sans-serif" },
       },
       radius: {
         small: { px: 0 },

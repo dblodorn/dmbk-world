@@ -60,11 +60,11 @@ export default function ArenaChannelResults({
             target: "_blank",
             rel: "noopener noreferrer",
             style: {
-              color: "--rs-color-foreground-primary"
+              color: "var(--rs-color-foreground-neutral)"
             }
           }}
         >
-          <Text variant="title-5" weight="bold" color="primary">{channel.slug}</Text>
+          <Text variant="title-1" weight="bold" color="neutral">{channel.slug}</Text>
         </Link>
         <Text variant="body-2" color="neutral-faded">
           {total} images
