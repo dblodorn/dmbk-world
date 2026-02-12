@@ -1,0 +1,71 @@
+import { Kysely, sql } from "kysely";
+import { LibsqlDialect } from "@libsql/kysely-libsql";
+import { config } from "dotenv";
+
+// Load env the same way env.ts does
+config({ path: "../../.env.local" });
+config({ path: ".env.local" });
+config();
+config({ path: "../../apps/lora-trainer/.env" });
+
+export interface LoraTrainingsTable {
+  id: string;
+  request_id: string;
+  wallet_address: string;
+  trigger_word: string;
+  steps: number;
+  image_urls: string; // JSON-encoded string[]
+  lora_weights_url: string | null;
+  status: "pending" | "completed" | "failed";
+  created_at: string;
+}
+
+interface Database {
+  lora_trainings: LoraTrainingsTable;
+}
+
+let _db: Kysely<Database> | null = null;
+let _initialized = false;
+
+export function getDb(): Kysely<Database> {
+  if (!_db) {
+    const url = process.env.TURSO_DATABASE_URL;
+    if (!url) {
+      throw new Error(
+        "TURSO_DATABASE_URL is not configured. Set it in .env to use database features.",
+      );
+    }
+    _db = new Kysely<Database>({
+      dialect: new LibsqlDialect({
+        url,
+        authToken: process.env.TURSO_AUTH_TOKEN,
+      }),
+    });
+  }
+  return _db;
+}
+
+export async function ensureLoraTable(): Promise<void> {
+  if (_initialized) return;
+  const db = getDb();
+  await sql`
+    CREATE TABLE IF NOT EXISTS lora_trainings (
+      id TEXT PRIMARY KEY,
+      request_id TEXT UNIQUE NOT NULL,
+      wallet_address TEXT NOT NULL,
+      trigger_word TEXT NOT NULL,
+      steps INTEGER NOT NULL,
+      image_urls TEXT NOT NULL,
+      lora_weights_url TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_lora_trainings_created_at ON lora_trainings(created_at)`.execute(
+    db,
+  );
+  await sql`CREATE INDEX IF NOT EXISTS idx_lora_trainings_status ON lora_trainings(status)`.execute(
+    db,
+  );
+  _initialized = true;
+}
