@@ -177,9 +177,9 @@ void main() {
   gray = mix(gray, 1.0, 0.2);
 
   // Duotone: map luminance between shadow and highlight colors
-  //   Shadow:    warm near-black  (dark umber)
-  //   Highlight: golden yellow    #D9A528 -> (0.851, 0.647, 0.157)
-  vec3 shadowTone    = vec3(0.06, 0.04, 0.02);
+  //   Shadow:    primary green      #1A9E3F -> (0.102, 0.620, 0.247)
+  //   Highlight: golden yellow      #D9A528 -> (0.851, 0.647, 0.157)
+  vec3 shadowTone    = vec3(0.102, 0.620, 0.247);
   vec3 highlightTone = vec3(0.851, 0.647, 0.157);
   vec3 duotone = mix(shadowTone, highlightTone, gray);
 
@@ -312,7 +312,7 @@ export default function ImageSlideshow() {
           svg = svg.replace(/height="[^"]*"/, 'height="auto"');
           // Ensure the SVG itself is a block element for proper flex centering
           svg = svg.replace("<svg ", '<svg style="display:block" ');
-          svg = svg.replace(/fill="#000000"/, 'fill="#00d973"');
+          svg = svg.replace(/fill="#000000"/, 'fill="#0024cc"');
           setSvgContent(svg);
         }
       })
@@ -419,10 +419,10 @@ export default function ImageSlideshow() {
     }
     glRef.current = gl;
 
-    // Set clear color to accent yellow so canvas matches before textures load
-    gl.clearColor(0.851, 0.647, 0.157, 1.0);
+    // Set clear color to accent green so canvas matches before textures load
+    gl.clearColor(0.102, 0.620, 0.247, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    // Canvas is now yellow — safe to reveal (matches the container background)
+    // Canvas is now green — safe to reveal (matches the container background)
     setCanvasReady(true);
 
     // Compile shaders
@@ -709,7 +709,7 @@ export default function ImageSlideshow() {
         height: "100%",
         position: "relative",
         overflow: "hidden",
-        backgroundColor: "var(--color-accent, #D9A528)",
+        backgroundColor: "var(--color-accent, #1A9E3F)",
       }}
     >
       <canvas
